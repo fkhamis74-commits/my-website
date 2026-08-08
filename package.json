@@ -1,0 +1,13 @@
+{
+  "name": "bicycle-store-site",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Static used-bicycle marketplace site (single index.html) with a local dev server for testing.",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.116.0"
+  }
+}
