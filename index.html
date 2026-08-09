@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title data-i18n="documentTitle">Pedalex</title>
+  <title data-i18n="documentTitle">Pedalex | سوق الدراجات الهوائية مستعمل وجديد</title>
+  <meta name="description" content="منصة Pedalex لبيع وشراء الدراجات الهوائية ودراجات الطريق (Road Bikes). ابحث عن المقاس والميزانية المناسبة لك بسهولة." />
+  <link rel="icon" type="image/svg+xml" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="%232563EB"/><path d="M35 25H58C67.9 25 76 33 76 43C76 53 67.9 61 58 61H47V75H35V25Z" fill="white"/><circle cx="58" cy="43" r="8" fill="%231E293B"/></svg>'>
   <!-- Cairo — an Arabic-optimized webfont (also covers Latin), matching the
        site's primary language. Falls back to system-ui gracefully if this
        fails to load (e.g. no internet while testing locally). -->
@@ -81,14 +83,6 @@
 
     .is-hidden { display: none; }
     .muted-text { color: var(--muted); }
-
-    .lang-select {
-      padding: 8px 12px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: var(--bg);
-      color: var(--text);
-    }
 
     .lang-toggle-btn {
       padding: 8px 12px;
@@ -405,10 +399,46 @@
       z-index: 100;
     }
 
+    /* A <button> now (clicking it goes home), so its own chrome needs
+       resetting back to plain — the flex/gap layout is what actually gives
+       it its look. */
     .logo {
       display: flex;
       align-items: center;
       gap: 12px;
+      background: none;
+      border: none;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      font: inherit;
+      text-align: start;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-add-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s ease;
+    }
+
+    .header-add-btn:hover {
+      background: var(--accent-2);
     }
 
     .logo-icon {
@@ -2897,7 +2927,7 @@
   <div id="app" class="is-hidden">
     <!-- Header -->
     <div class="header">
-      <div class="logo">
+      <button class="logo" onclick="showPage('page-home')" title="الرئيسية" aria-label="الرئيسية" data-i18n-title="homeButton" data-i18n-aria-label="homeButton">
         <svg width="42" height="42" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="logo-icon" aria-hidden="true">
           <circle cx="50" cy="50" r="42" stroke="#2563EB" stroke-width="8" stroke-dasharray="12 6" class="logo-icon-ring" />
           <path d="M35 25H58C67.9411 25 76 33.0589 76 43C76 52.9411 67.9411 61 58 61H47V75H35V25Z" fill="#1E293B"/>
@@ -2908,8 +2938,13 @@
           <span class="logo-wordmark">Pedal<span class="logo-wordmark-accent">ex</span></span>
           <span class="logo-tagline">سوق الدراجات الهوائية | Bike Marketplace</span>
         </div>
+      </button>
+      <div class="header-actions">
+        <button class="header-add-btn" onclick="openAddPage()">
+          <span aria-hidden="true">+</span> <span data-i18n="sellBikeButton">بيع دراجتك</span>
+        </button>
+        <button class="mobile-menu-toggle" id="mobileMenuToggle" onclick="toggleMobileNav()" title="القائمة" aria-label="القائمة" data-i18n-title="mobileMenuTitle" data-i18n-aria-label="mobileMenuTitle">☰</button>
       </div>
-      <button class="mobile-menu-toggle" id="mobileMenuToggle" onclick="toggleMobileNav()" title="القائمة" aria-label="القائمة" data-i18n-title="mobileMenuTitle" data-i18n-aria-label="mobileMenuTitle">☰</button>
       <div class="header-collapsible" id="headerCollapsible">
         <div class="nav-buttons">
           <button class="nav-btn" onclick="showPage('page-home')" data-i18n="homeButton">الرئيسية</button>
@@ -2920,10 +2955,6 @@
           <button class="nav-btn is-hidden" id="admin-btn" onclick="showPage('page-admin')" data-i18n="adminButton">الإدارة</button>
         </div>
         <div class="user-section">
-          <select id="languageSelect" class="lang-select" onchange="applyLanguage(this.value)">
-            <option value="ar" data-i18n="languageArabicOption">العربية</option>
-            <option value="en" data-i18n="languageEnglishOption">English</option>
-          </select>
           <button id="langToggleBtn" class="lang-toggle-btn" onclick="toggleLanguage()">English 🌐</button>
           <label class="theme-toggle-label">
             <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()" />
@@ -3608,7 +3639,7 @@
     // ===== TRANSLATIONS =====
     const translations = {
       ar: {
-        documentTitle: 'Pedalex',
+        documentTitle: 'Pedalex | سوق الدراجات الهوائية مستعمل وجديد',
         // Auth
         authWelcome: 'مرحباً بك',
         authSubtitle: 'اختر طريقة الدخول',
@@ -3655,8 +3686,6 @@
         adminButton: 'الإدارة',
         logoutButton: 'تسجيل الخروج',
         darkModeLabel: 'الوضع الليلي',
-        languageArabicOption: 'العربية',
-        languageEnglishOption: 'English',
         langToggleToEnglish: 'English 🌐',
         langToggleToArabic: 'عربي 🌐',
 
@@ -3943,7 +3972,7 @@
         areYouSure: 'هل أنت متأكد؟',
       },
       en: {
-        documentTitle: 'Pedalex',
+        documentTitle: 'Pedalex | New & Used Bike Marketplace',
         // Auth
         authWelcome: 'Welcome',
         authSubtitle: 'Choose how you want to sign in',
@@ -3990,8 +4019,6 @@
         adminButton: 'Admin',
         logoutButton: 'Logout',
         darkModeLabel: 'Dark Mode',
-        languageArabicOption: 'Arabic',
-        languageEnglishOption: 'English',
         langToggleToEnglish: 'English 🌐',
         langToggleToArabic: 'Arabic 🌐',
 
@@ -4645,7 +4672,6 @@
       currentLang = lang;
       document.documentElement.lang = lang;
       document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-      document.getElementById('languageSelect').value = lang;
       updateLangToggleButtonText();
       saveData();
 
