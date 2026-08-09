@@ -3052,7 +3052,7 @@
           </div>
         </div>
 
-        <button class="btn add-product-cta" onclick="addProduct()" data-i18n="addProductButton">إضافة المنتج</button>
+        <button class="btn add-product-cta" id="addProductBtn" onclick="addProduct()" data-i18n="addProductButton">إضافة المنتج</button>
       </div>
     </div>
 
@@ -3495,6 +3495,11 @@
   </div>
 
   <script>
+    // Shown in place of a listing's image if its URL is broken/unreachable —
+    // reuses an image already part of this codebase's demo data rather than
+    // adding a new external dependency.
+    const FALLBACK_IMAGE_URL = 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=800';
+
     // ===== TRANSLATIONS =====
     const translations = {
       ar: {
@@ -3698,6 +3703,7 @@
         productNotesLabel: 'ملاحظات إضافية',
         productNotesPlaceholder: 'أضف تفاصيل إضافية عن المنتج...',
         addProductButton: 'إضافة المنتج',
+        publishingButton: '⏳ جاري النشر...',
 
         // Profile
         profileTitle: 'ملفي الشخصي',
@@ -4031,6 +4037,7 @@
         productNotesLabel: 'Additional Notes',
         productNotesPlaceholder: 'Add additional details about the product...',
         addProductButton: 'Add Product',
+        publishingButton: '⏳ Publishing...',
 
         // Profile
         profileTitle: 'My Profile',
@@ -4668,7 +4675,7 @@
       const ratingText = String(product.sellerRating || '5').includes('★') ? String(product.sellerRating) : `★ ${product.sellerRating || 5}`;
 
       document.getElementById('modalImageWrap').innerHTML = product.image
-        ? `<img src="${escapeHtml(product.image)}" class="modal-image" alt="${escapeHtml(localizedName)}" />`
+        ? `<img src="${escapeHtml(product.image)}" class="modal-image" alt="${escapeHtml(localizedName)}" onerror="this.onerror=null; this.src='${FALLBACK_IMAGE_URL}';" />`
         : `<div class="modal-image">🚲</div>`;
       document.getElementById('modalType').innerHTML = `
         <div class="modal-type-row">
@@ -4708,6 +4715,19 @@
 
     document.getElementById('bikeModal').addEventListener('click', function(e) {
       if (e.target === this) closeBikeModal();
+    });
+
+    // Escape closes whichever overlay is currently open — checked in
+    // priority order so one press only closes the topmost one.
+    document.addEventListener('keydown', function(e) {
+      if (e.key !== 'Escape') return;
+      if (document.getElementById('bikeModal').classList.contains('open')) {
+        closeBikeModal();
+      } else if (document.getElementById('rejectModal').classList.contains('open')) {
+        closeRejectModal();
+      } else if (chatOpen) {
+        toggleChatWidget();
+      }
     });
 
     // ===== TYPE FILTER TABS =====
@@ -4963,6 +4983,15 @@
         adminNotes: ''
       };
 
+      // Disable + relabel the submit button for the duration of the request,
+      // so a slow connection doesn't invite a double-submit — restored in
+      // `finally` regardless of whether the request succeeds or fails.
+      const submitBtn = document.getElementById('addProductBtn');
+      const originalLabel = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.textContent = t('publishingButton', '⏳ Publishing...');
+
+      let created = false;
       try {
         const res = await fetch('/api/products', {
           method: 'POST',
@@ -4973,13 +5002,17 @@
         // Refetch rather than just appending the response — picks up
         // whatever other visitors changed too, not just this submission.
         await loadProducts();
+        created = true;
       } catch (e) {
         console.error('Error creating product:', e);
         alert(currentLanguage === 'ar'
           ? 'تعذّر نشر المنتج. تأكد من تشغيل الخادم وحاول مرة أخرى.'
           : 'Could not publish the product. Check the server is running and try again.');
-        return;
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalLabel;
       }
+      if (!created) return;
 
       clearForm();
       alert(t('submitReviewSuccess', '✅ Product submitted for review!\nAdmin will review and publish it after approval.'));
@@ -5151,7 +5184,7 @@
         <div class="product-card product-card-clickable" onclick="openBikeModal(${product.id})">
           ${savePct > 0 ? `<div class="save-badge">${escapeHtml(saveTxt)}</div>` : ''}
           ${product.image
-            ? `<img src="${escapeHtml(product.image)}" class="product-image" alt="${escapeHtml(localizedName)}" />`
+            ? `<img src="${escapeHtml(product.image)}" class="product-image" alt="${escapeHtml(localizedName)}" onerror="this.onerror=null; this.src='${FALLBACK_IMAGE_URL}';" />`
             : `<div class="product-image product-image-fallback">${t('noImageFallback', 'No Image')}</div>`}
           <div class="product-info">
             <div class="product-card-top-row">
@@ -5191,7 +5224,7 @@
       const localizedName = localizeProductText(product, 'name', 'nameEn') || product.name;
       const localizedSellerName = localizeSellerName(product);
       return `<div class="product-row">
-        ${product.image ? `<img src="${escapeHtml(product.image)}" class="product-row-image" alt="${escapeHtml(localizedName)}" />` : `<div class="product-row-image product-image-fallback">${t('noImageFallback', 'No Image')}</div>`}
+        ${product.image ? `<img src="${escapeHtml(product.image)}" class="product-row-image" alt="${escapeHtml(localizedName)}" onerror="this.onerror=null; this.src='${FALLBACK_IMAGE_URL}';" />` : `<div class="product-row-image product-image-fallback">${t('noImageFallback', 'No Image')}</div>`}
         <div class="product-row-main">
           <h3 class="product-row-title">${escapeHtml(localizedName)}</h3>
           <p class="product-row-seller">${escapeHtml(localizedSellerName)}</p>
@@ -5458,7 +5491,7 @@
 
           html += `
             <div class="product-card profile-product-card">
-              ${product.image ? `<img src="${escapeHtml(product.image)}" class="product-image" alt="${escapeHtml(localizedProductName)}" />` : '<div class="product-image product-image-fallback product-image-fallback-large">🚲</div>'}
+              ${product.image ? `<img src="${escapeHtml(product.image)}" class="product-image" alt="${escapeHtml(localizedProductName)}" onerror="this.onerror=null; this.src='${FALLBACK_IMAGE_URL}';" />` : '<div class="product-image product-image-fallback product-image-fallback-large">🚲</div>'}
               <div class="profile-card-action-corner">
                 <button class="profile-delete-btn" onclick="deleteMyProduct(${product.id})" title="${t('deleteText', 'Delete')}">✕</button>
               </div>
