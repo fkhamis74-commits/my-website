@@ -4,25 +4,31 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title data-i18n="documentTitle">متجر الدراجات المستعملة</title>
+  <!-- Cairo — an Arabic-optimized webfont (also covers Latin), matching the
+       site's primary language. Falls back to system-ui gracefully if this
+       fails to load (e.g. no internet while testing locally). -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #F5F0E6;
+      --bg: #F8FAFC;
       --card: #FFFFFF;
-      --text: #1E1235;
-      --muted: #8B8076;
-      --accent: #E8872A;
-      --accent-2: #C9741F;
-      --accent-3: #1E1235;
+      --text: #0F172A;
+      --muted: #64748B;
+      --accent: #FF5722;
+      --accent-2: #E64A19;
+      --accent-3: #0F172A;
       --accent-4: #2ECC71;
       --accent-5: #9B59B6;
-      --border: #E8E0D0;
+      --border: #E2E8F0;
       --bg-card: #FFFFFF;
-      --border-color: #E8E0D0;
-      --text-color: #1E1235;
-      --modal-spec-bg: rgba(30, 18, 53, 0.04);
-      --modal-spec-border: rgba(30, 18, 53, 0.1);
-      --modal-spec-text: #1E1235;
-      --modal-close-bg: rgba(30, 18, 53, 0.7);
+      --border-color: #E2E8F0;
+      --text-color: #0F172A;
+      --modal-spec-bg: rgba(15, 23, 42, 0.04);
+      --modal-spec-border: rgba(15, 23, 42, 0.1);
+      --modal-spec-text: #0F172A;
+      --modal-close-bg: rgba(15, 23, 42, 0.7);
       --modal-close-text: #ffffff;
       --modal-close-hover-bg: rgba(231, 76, 60, 0.9);
       --shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
@@ -37,32 +43,34 @@
     }
     body {
       margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'Cairo', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       text-rendering: optimizeLegibility;
-      background: #F5F0E6;
+      background: #F8FAFC;
       background-color: var(--bg);
       color: var(--text);
       min-height: 100vh;
     }
 
+    /* Dark mode mirrors the light theme's cool slate palette rather than the
+       old purple-tinted dark theme, so both modes read as one brand. */
     body.dark-mode {
-      --bg: #0f0d18;
-      --card: #1a1630;
-      --text: #F5F0E6;
-      --muted: #a89e94;
-      --border: #2d2840;
-      --bg-card: #1a1a1a;
-      --border-color: #333;
-      --text-color: #fff;
+      --bg: #0F172A;
+      --card: #1E293B;
+      --text: #F1F5F9;
+      --muted: #94A3B8;
+      --border: #334155;
+      --bg-card: #1E293B;
+      --border-color: #334155;
+      --text-color: #F1F5F9;
       --modal-spec-bg: rgba(255, 255, 255, 0.04);
       --modal-spec-border: rgba(255, 255, 255, 0.08);
-      --modal-spec-text: #fff;
+      --modal-spec-text: #F1F5F9;
       --modal-close-bg: rgba(0, 0, 0, 0.6);
       --modal-close-text: #ffffff;
       --modal-close-hover-bg: rgba(235, 87, 87, 0.8);
-      background: #0f0d18;
+      background: #0F172A;
     }
 
     .container {
@@ -438,7 +446,7 @@
       background: var(--accent);
       color: white;
       border-color: var(--accent);
-      box-shadow: 0 4px 14px rgba(232, 135, 42, 0.4);
+      box-shadow: 0 4px 14px rgba(255, 87, 34, 0.4);
     }
 
     .user-section {
@@ -465,7 +473,7 @@
     .logout-btn:hover {
       background: var(--accent-2);
       transform: translateY(-2px);
-      box-shadow: 0 6px 18px rgba(232, 135, 42, 0.4);
+      box-shadow: 0 6px 18px rgba(255, 87, 34, 0.4);
     }
 
     /* Pages */
@@ -537,7 +545,7 @@
     .form-group textarea:focus {
       outline: none;
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(232, 135, 42, 0.2);
+      box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.2);
       background: var(--card);
     }
 
@@ -552,7 +560,7 @@
       font-size: 1rem;
       transition: all 0.25s ease;
       width: 100%;
-      box-shadow: 0 4px 16px rgba(232, 135, 42, 0.35);
+      box-shadow: 0 4px 16px rgba(255, 87, 34, 0.35);
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
@@ -560,7 +568,7 @@
     .btn:hover {
       background: var(--accent-2);
       transform: translateY(-3px);
-      box-shadow: 0 8px 24px rgba(232, 135, 42, 0.45);
+      box-shadow: 0 8px 24px rgba(255, 87, 34, 0.45);
     }
 
     .btn:active {
@@ -643,7 +651,7 @@
     .auth-option-btn:hover {
       border-color: var(--accent);
       transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(232, 135, 42, 0.2);
+      box-shadow: 0 8px 24px rgba(255, 87, 34, 0.2);
     }
 
     .auth-guest-btn {
@@ -651,13 +659,13 @@
       background: var(--accent);
       border: none;
       color: white;
-      box-shadow: 0 4px 16px rgba(232, 135, 42, 0.35);
+      box-shadow: 0 4px 16px rgba(255, 87, 34, 0.35);
     }
 
     .auth-guest-btn:hover {
       background: var(--accent-2);
       transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(232, 135, 42, 0.45);
+      box-shadow: 0 8px 24px rgba(255, 87, 34, 0.45);
     }
 
     .auth-back-btn {
@@ -719,7 +727,7 @@
     .search-section input:focus,
     .search-section select:focus {
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(232, 135, 42, 0.2);
+      box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.2);
       outline: none;
     }
 
@@ -753,7 +761,7 @@
       background: var(--accent);
       color: white;
       border-color: var(--accent);
-      box-shadow: 0 4px 14px rgba(232, 135, 42, 0.35);
+      box-shadow: 0 4px 14px rgba(255, 87, 34, 0.35);
     }
 
     .products-grid {
@@ -775,15 +783,51 @@
     }
 
     .product-card:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14);
+      transform: translateY(-4px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Size/material badge — theme-aware version of the requested bike-badge look */
+    .product-badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .bike-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+
+    /* Frame-material badge gets its own tint (like a status badge) so it
+       stands out from the plain size/type badges next to it. */
+    .bike-badge-material {
+      background: #E0F2FE;
+      color: #0369A1;
+      border-color: #BAE6FD;
     }
 
     .product-image {
       width: 100%;
       height: 210px;
-      background: #F0EBE3;
+      background: #E2E8F0;
       object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+
+    /* .product-card already clips overflow, so a plain scale on hover is
+       enough for the zoom effect — no extra wrapper element needed. */
+    .product-card:hover .product-image {
+      transform: scale(1.05);
     }
 
     .product-info {
@@ -823,7 +867,7 @@
     }
 
     .seller-info {
-      background: #FBF7F0;
+      background: #F1F5F9;
       padding: 12px;
       border-radius: 8px;
       margin-bottom: 14px;
@@ -890,14 +934,77 @@
       background: var(--accent);
       color: white;
       border-color: var(--accent);
-      box-shadow: 0 4px 14px rgba(232, 135, 42, 0.3);
+      box-shadow: 0 4px 14px rgba(255, 87, 34, 0.3);
     }
 
     .contact-btn:hover {
       background: var(--accent-2);
       border-color: var(--accent-2);
       transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(232, 135, 42, 0.4);
+      box-shadow: 0 6px 20px rgba(255, 87, 34, 0.4);
+    }
+
+    /* Compact icon-only favorite toggle, moved into the card's top row */
+    .favorite-icon-btn {
+      width: 34px;
+      height: 34px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--card);
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .favorite-icon-btn:hover {
+      border-color: #fbbf24;
+      transform: scale(1.08);
+    }
+
+    .favorite-icon-btn.active {
+      background: #fbbf24;
+      border-color: #fbbf24;
+    }
+
+    /* Price + contact button combined into a single row */
+    .product-price-contact-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .product-price-block {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .contact-btn-solid {
+      width: auto;
+      flex-shrink: 0;
+      padding: 10px 22px;
+      border-radius: 50px;
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.25s ease;
+      box-shadow: 0 4px 14px rgba(255, 87, 34, 0.3);
+    }
+
+    .contact-btn-solid:hover {
+      background: var(--accent-2);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255, 87, 34, 0.4);
     }
 
     .products-list {
@@ -957,13 +1064,6 @@
       margin-bottom: 8px;
     }
 
-    .product-card-top-row .product-type {
-      margin-bottom: 0;
-    }
-
-    .product-type-inline {
-      margin-bottom: 0;
-    }
 
     .product-row-main {
       flex: 1;
@@ -1146,7 +1246,7 @@
     .tab-btn.active {
       color: white;
       background: var(--accent);
-      box-shadow: 0 4px 14px rgba(232, 135, 42, 0.35);
+      box-shadow: 0 4px 14px rgba(255, 87, 34, 0.35);
     }
 
     .tab-content {
@@ -1246,11 +1346,11 @@
     }
 
     .admin-toggle-btn.revoke {
-      background: #8B8076;
+      background: #64748B;
     }
 
     .admin-toggle-btn.revoke:hover {
-      background: #6b6259;
+      background: #475569;
     }
 
     /* Messages Page */
@@ -1342,7 +1442,7 @@
       width: 100%; height: 100%;
       object-fit: cover;
       display: block;
-      background: #C5BEB2;
+      background: #CBD5E1;
     }
 
     .category-card-overlay {
@@ -1391,15 +1491,30 @@
 
     /* ===== Filter Bar ===== */
     .filter-bar {
-      display: flex;
-      align-items: center;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 14px;
-      flex-wrap: wrap;
+      align-items: end;
       margin-bottom: 28px;
       background: var(--card);
-      padding: 16px 20px;
+      padding: 18px 20px;
       border-radius: 12px;
       border: 1px solid var(--border);
+    }
+
+    .filter-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .filter-field label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
     }
 
     .filter-bar select,
@@ -1412,6 +1527,7 @@
       font-family: inherit;
       font-size: 0.9rem;
       transition: border-color 0.2s;
+      width: 100%;
     }
 
     .filter-bar select:focus,
@@ -1420,20 +1536,8 @@
       outline: none;
     }
 
-    .filter-bar input[type="text"] {
-      flex: 1;
-      min-width: 160px;
-    }
-
-    .filter-label {
-      font-weight: 700;
-      font-size: 0.85rem;
-      color: var(--text);
-    }
-
-    .filter-bar .view-toggles {
-      margin-right: auto;
-    }
+    /* .view-toggles handles its own display: flex — the grid cell here just
+       needs no special positioning, unlike the old flex-row layout. */
 
     /* ===== AK Bikes section title style ===== */
     .section-heading {
@@ -1458,7 +1562,7 @@
     }
 
     .message-item.active {
-      background: rgba(255, 107, 0, 0.1);
+      background: rgba(255, 87, 34, 0.1);
       border-left: 3px solid var(--accent);
     }
 
@@ -1951,6 +2055,54 @@
       padding: 14px 20px;
     }
 
+    /* WhatsApp contact — external handoff via wa.me, alongside (not instead
+       of) the site's internal messaging system. */
+    .btn-whatsapp {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: #25D366;
+      color: white;
+      text-decoration: none;
+      border-radius: 50px;
+      font-weight: 700;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 10px rgba(37, 211, 102, 0.35);
+    }
+
+    /* Same cascade fix as .chat-panel.is-hidden — .btn-whatsapp's own
+       `display` would otherwise beat the generic .is-hidden rule. */
+    .btn-whatsapp.is-hidden {
+      display: none;
+    }
+
+    .btn-whatsapp:hover {
+      background: #1EBE57;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(37, 211, 102, 0.45);
+    }
+
+    /* Compact icon-only variant used on product cards */
+    .btn-whatsapp-icon {
+      width: 40px;
+      height: 40px;
+      font-size: 1.1rem;
+    }
+
+    .product-contact-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .modal-whatsapp-btn {
+      width: auto;
+      padding: 14px 18px;
+      font-size: 0.9rem;
+    }
+
     /* شبكة المواصفات الفنية داخل المودال */
     .modal-spec-grid {
       display: grid;
@@ -2137,7 +2289,7 @@
     }
 
     .status-badge.reserved {
-      background: rgba(232, 135, 42, 0.15);
+      background: rgba(255, 87, 34, 0.15);
       color: var(--accent);
       border: 1px solid var(--accent);
     }
@@ -2354,7 +2506,7 @@
       color: white;
       font-size: 1.5rem;
       cursor: pointer;
-      box-shadow: 0 6px 20px rgba(232, 135, 42, 0.45);
+      box-shadow: 0 6px 20px rgba(255, 87, 34, 0.45);
       transition: transform 0.2s ease;
     }
 
@@ -2378,6 +2530,13 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+    }
+
+    /* Without this, .chat-panel's own `display: flex` (equal specificity,
+       later in the stylesheet) wins the cascade over the generic
+       .is-hidden rule, so the panel could never actually be hidden. */
+    .chat-panel.is-hidden {
+      display: none;
     }
 
     .chat-panel-header {
@@ -2760,25 +2919,36 @@
         </div>
 
         <div class="filter-bar">
-          <span class="filter-label" data-i18n="searchLabel">بحث:</span>
-          <input type="text" id="searchInput" placeholder="ابحث عن منتج..." data-i18n-placeholder="searchPlaceholder" onkeyup="filterProducts()" />
-          <select id="categoryFilter" onchange="filterProducts()">
-            <option value="" data-i18n="categoryAllOption">الكل</option>
-            <option value="bike" data-i18n="bikeOption">دراجة هوائية</option>
-            <option value="road" data-i18n="roadOption">دراجات طريق</option>
-            <option value="mountain" data-i18n="mountainOption">دراجات جبلية</option>
-            <option value="hybrid" data-i18n="hybridOption">دراجات هجين</option>
-            <option value="electric" data-i18n="electricOption">دراجات كهربائية</option>
-            <option value="accessory" data-i18n="accessoryOption">ملحق</option>
-          </select>
-          <select id="sortSelect" onchange="sortProducts()">
-            <option value="newest" data-i18n="sortNewestOption">الأحدث</option>
-            <option value="price" data-i18n="sortPriceOption">السعر</option>
-            <option value="name" data-i18n="sortNameOption">الاسم</option>
-          </select>
-          <div class="view-toggles">
-            <button class="view-btn active" onclick="setView('grid', this)" title="عرض شبكة" data-i18n-title="viewGridTitle">☷</button>
-            <button class="view-btn" onclick="setView('list', this)" title="عرض قائمة" data-i18n-title="viewListTitle">☰</button>
+          <div class="filter-field">
+            <label data-i18n="searchLabel">بحث:</label>
+            <input type="text" id="searchInput" placeholder="ابحث عن منتج..." data-i18n-placeholder="searchPlaceholder" onkeyup="filterProducts()" />
+          </div>
+          <div class="filter-field">
+            <label data-i18n="categoryFilterLabel">الفئة</label>
+            <select id="categoryFilter" onchange="filterProducts()">
+              <option value="" data-i18n="categoryAllOption">الكل</option>
+              <option value="bike" data-i18n="bikeOption">دراجة هوائية</option>
+              <option value="road" data-i18n="roadOption">دراجات طريق</option>
+              <option value="mountain" data-i18n="mountainOption">دراجات جبلية</option>
+              <option value="hybrid" data-i18n="hybridOption">دراجات هجين</option>
+              <option value="electric" data-i18n="electricOption">دراجات كهربائية</option>
+              <option value="accessory" data-i18n="accessoryOption">ملحق</option>
+            </select>
+          </div>
+          <div class="filter-field">
+            <label data-i18n="sortByLabel">ترتيب حسب</label>
+            <select id="sortSelect" onchange="sortProducts()">
+              <option value="newest" data-i18n="sortNewestOption">الأحدث</option>
+              <option value="price" data-i18n="sortPriceOption">السعر</option>
+              <option value="name" data-i18n="sortNameOption">الاسم</option>
+            </select>
+          </div>
+          <div class="filter-field">
+            <label data-i18n="viewLabel">العرض</label>
+            <div class="view-toggles">
+              <button class="view-btn active" onclick="setView('grid', this)" title="عرض شبكة" data-i18n-title="viewGridTitle">☷</button>
+              <button class="view-btn" onclick="setView('list', this)" title="عرض قائمة" data-i18n-title="viewListTitle">☰</button>
+            </div>
           </div>
         </div>
 
@@ -2838,7 +3008,7 @@
               </select>
             </div>
             <div class="form-group">
-              <label data-i18n="productPriceLabel">السعر (ر.س)</label>
+              <label data-i18n="productPriceLabel">السعر (د.إ)</label>
               <input type="number" id="productPrice" placeholder="مثال: 500" data-i18n-placeholder="productPricePlaceholder" />
             </div>
             <div id="accessoryFieldContainer" class="form-group is-hidden">
@@ -3281,6 +3451,7 @@
           </div>
           <div class="modal-actions">
             <button class="btn modal-contact-btn" id="modalContactBtn" data-i18n="modalContactSeller">💬 تواصل مع البائع</button>
+            <a class="btn-whatsapp modal-whatsapp-btn is-hidden" id="modalWhatsappBtn" target="_blank" rel="noopener">💬 WhatsApp</a>
             <button class="action-btn favorite-btn modal-fav-btn" id="modalFavBtn">❤️</button>
           </div>
         </div>
@@ -3429,6 +3600,9 @@
         inventorySubtitle: 'كل منتج تم فحصه من مستخدمين موثوقين — جاهز للشراء',
         searchPlaceholder: 'ابحث عن منتج...',
         searchLabel: 'بحث:',
+        categoryFilterLabel: 'الفئة',
+        sortByLabel: 'ترتيب حسب',
+        viewLabel: 'العرض',
         allTab: '🚲 الكل',
         bicyclesTab: '🏔️ دراجات هوائية',
         roadTab: '🛣️ دراجات طريق',
@@ -3502,7 +3676,7 @@
         conditionExcellent: 'ممتازة',
         conditionGood: 'جيدة',
         conditionAcceptable: 'مقبولة',
-        productPriceLabel: 'السعر (ر.س)',
+        productPriceLabel: 'السعر (د.إ)',
         productPricePlaceholder: 'مثال: 500',
         accessoryTypeLabel: 'نوع الملحق',
         accessoryHelmet: 'خوذة',
@@ -3591,6 +3765,7 @@
         notSpecified: 'غير محدد',
         contactLabel: '💬 تواصل',
         contactShortLabel: 'تواصل',
+        addToFavoritesTitle: 'إضافة للمفضلة',
         cannotMessageAlert: 'لا يمكنك المراسلة',
         sellerInfoTitle: 'معلومات البائع',
         phoneText: 'الهاتف',
@@ -3756,6 +3931,9 @@
         inventorySubtitle: 'Trusted listings from real riders, ready for your next ride',
         searchPlaceholder: 'Search for a product...',
         searchLabel: 'Search:',
+        categoryFilterLabel: 'Category',
+        sortByLabel: 'Sort by',
+        viewLabel: 'View',
         allTab: '🚲 All',
         bicyclesTab: '🏔️ Bicycles',
         roadTab: '🛣️ Road Bikes',
@@ -3829,7 +4007,7 @@
         conditionExcellent: 'Excellent',
         conditionGood: 'Good',
         conditionAcceptable: 'Acceptable',
-        productPriceLabel: 'Price (SAR)',
+        productPriceLabel: 'Price (AED)',
         productPricePlaceholder: 'Example: 500',
         accessoryTypeLabel: 'Accessory Type',
         accessoryHelmet: 'Helmet',
@@ -3918,6 +4096,7 @@
         notSpecified: 'N/A',
         contactLabel: '💬 Contact',
         contactShortLabel: 'Contact',
+        addToFavoritesTitle: 'Add to favorites',
         cannotMessageAlert: 'Cannot message',
         sellerInfoTitle: 'Seller Info',
         phoneText: 'Phone',
@@ -4535,7 +4714,7 @@
       const normalizedCondition = normalizeConditionValue(product.condition);
       const savePct = normalizedCondition === 'excellent' ? 15 : normalizedCondition === 'good' ? 30 : 50;
       const originalPrice = Math.round(product.price * (1 + savePct / 100) / 10) * 10;
-      const currency = currentLanguage === 'ar' ? 'ر.س' : 'SAR';
+      const currency = currentLanguage === 'ar' ? 'د.إ' : 'AED';
       const status = product.availability || 'available';
       const statusClass = ['available', 'reserved', 'sold'].includes(status) ? status : 'available';
       const ratingText = String(product.sellerRating || '5').includes('★') ? String(product.sellerRating) : `★ ${product.sellerRating || 5}`;
@@ -4567,6 +4746,10 @@
         : `<span class="modal-notes-empty">${t('modalNoExtraNotes', 'No additional notes')}</span>`;
       document.getElementById('modalContactBtn').onclick = () => { closeBikeModal(); startConversation(productId); };
       document.getElementById('modalFavBtn').onclick = () => toggleFavorite(productId);
+      const whatsappBtn = document.getElementById('modalWhatsappBtn');
+      const whatsappLink = buildWhatsAppLink(product);
+      whatsappBtn.classList.toggle('is-hidden', !whatsappLink);
+      whatsappBtn.href = whatsappLink || '#';
       document.getElementById('bikeModal').classList.add('open');
     }
 
@@ -4596,10 +4779,6 @@
     function getTranslatedLabel(labelKey, fallback) {
       const value = getTranslatedTerm('labels', labelKey);
       return value === labelKey ? fallback : value;
-    }
-
-    function renderBikeType(bikeType) {
-      return `<span class="product-type">${getTranslatedTerm('types', bikeType)}</span>`;
     }
 
     function translateInventoryType(type) {
@@ -4705,6 +4884,19 @@
 
     function localizeSellerName(product) {
       return localizeProductText(product, 'sellerName', 'sellerNameEn') || product?.sellerName || '';
+    }
+
+    // Builds a wa.me deep link pre-filled with a message about this listing.
+    // Returns null when the seller has no usable phone number, so callers can
+    // skip rendering the button entirely rather than link to a dead chat.
+    function buildWhatsAppLink(product) {
+      const digits = String(product?.sellerPhone || '').replace(/\D/g, '');
+      if (!digits) return null;
+      const name = localizeProductText(product, 'name', 'nameEn') || product.name;
+      const message = currentLanguage === 'ar'
+        ? `مرحباً، أنا مهتم بـ ${name}`
+        : `Hi, I'm interested in ${name}`;
+      return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
     }
 
     // ===== SIZE CALCULATOR =====
@@ -4970,7 +5162,7 @@
         ? Number(product.originalPrice)
         : Math.round(Number(product.price || 0) * (1 + savePct / 100) / 10) * 10;
 
-      const currency = currentLanguage === 'ar' ? 'ر.س' : 'SAR';
+      const currency = currentLanguage === 'ar' ? 'د.إ' : 'AED';
       const saveTxt = currentLanguage === 'ar' ? `وفّر ${savePct}%` : `Save ${savePct}%`;
       // Availability (for-sale state) is tracked separately from `status` (moderation state)
       // so an approved listing shows "Available" instead of "Published".
@@ -4981,6 +5173,7 @@
       const frameText = translateMaterial(product.frameMaterial);
       const ratingText = String(product.sellerRating || '5').includes('★') ? String(product.sellerRating) : `★ ${product.sellerRating || 5}`;
       const localizedSellerName = localizeSellerName(product);
+      const whatsappLink = buildWhatsAppLink(product);
 
       return `
         <div class="product-card product-card-clickable" onclick="openBikeModal(${product.id})">
@@ -4990,29 +5183,32 @@
             : `<div class="product-image product-image-fallback">${t('noImageFallback', 'No Image')}</div>`}
           <div class="product-info">
             <div class="product-card-top-row">
-              ${['road', 'mountain', 'hybrid', 'electric'].includes(product.type)
-                ? renderBikeType(product.type)
-                : `<div class="product-type product-type-inline">${escapeHtml(typeLabel)}</div>`}
               <span class="status-badge ${statusClass}">${escapeHtml(translateInventoryStatus(status))}</span>
+              <button class="favorite-icon-btn" onclick="event.stopPropagation(); toggleFavorite(${product.id})" title="${t('addToFavoritesTitle', 'Favorite')}">❤️</button>
             </div>
             <h3 class="product-title">${escapeHtml(localizedName)}</h3>
+            <div class="product-badge-row">
+              <span class="bike-badge">📏 ${escapeHtml(localizeProductText(product, 'size', 'sizeEn') || product.size || '—')}</span>
+              <span class="bike-badge bike-badge-material">🔩 ${escapeHtml(frameText)}</span>
+              <span class="bike-badge">${escapeHtml(typeLabel)}</span>
+            </div>
             <div class="product-details">
               📍 ${escapeHtml(locationText)}<br>
-              ${escapeHtml(getTranslatedLabel('size', t('sizeFieldLabel', 'Size')))}: <strong>${escapeHtml(localizeProductText(product, 'size', 'sizeEn') || product.size || '—')}</strong> &nbsp;|&nbsp;
-              ${escapeHtml(t('frameFieldLabel', 'Frame'))}: <strong>${escapeHtml(frameText)}</strong><br>
               ${escapeHtml(t('conditionFieldLabel', 'Condition'))}: <strong>${escapeHtml(conditionText)}</strong>
             </div>
             <div class="seller-info">
               <span class="seller-name">🙍 ${escapeHtml(localizedSellerName)}</span>
               <span class="seller-rating">${escapeHtml(ratingText)}</span>
             </div>
-            <div class="product-price-row">
-              <span class="product-price">${escapeHtml(product.price)} ${currency}</span>
-              ${originalPrice ? `<span class="price-original">${escapeHtml(originalPrice)} ${currency}</span>` : ''}
-            </div>
-            <div class="product-actions" onclick="event.stopPropagation()">
-              <button class="action-btn favorite-btn" onclick="toggleFavorite(${product.id})">${currentLanguage === 'ar' ? '❤️' : '❤️'}</button>
-              <button class="action-btn contact-btn" onclick="startConversation(${product.id})">${t('contactLabel', '💬 Contact')}</button>
+            <div class="product-price-contact-row" onclick="event.stopPropagation()">
+              <div class="product-price-block">
+                <span class="product-price">${escapeHtml(product.price)} ${currency}</span>
+                ${originalPrice ? `<span class="price-original">${escapeHtml(originalPrice)} ${currency}</span>` : ''}
+              </div>
+              <div class="product-contact-actions">
+                ${whatsappLink ? `<a class="btn-whatsapp btn-whatsapp-icon" href="${escapeHtml(whatsappLink)}" target="_blank" rel="noopener" title="WhatsApp" onclick="event.stopPropagation()">💬</a>` : ''}
+                <button class="contact-btn-solid" onclick="startConversation(${product.id})">${t('contactLabel', '💬 Contact')}</button>
+              </div>
             </div>
           </div>
         </div>
@@ -5027,7 +5223,7 @@
         <div class="product-row-main">
           <h3 class="product-row-title">${escapeHtml(localizedName)}</h3>
           <p class="product-row-seller">${escapeHtml(localizedSellerName)}</p>
-          <p class="product-row-price">${escapeHtml(product.price)} ${currentLanguage === 'ar' ? 'ر.س' : 'SAR'}</p>
+          <p class="product-row-price">${escapeHtml(product.price)} ${currentLanguage === 'ar' ? 'د.إ' : 'AED'}</p>
         </div>
         <div>
           <button class="action-btn contact-btn" onclick="startConversation(${product.id})">${t('contactShortLabel', 'Contact')}</button>
@@ -5293,7 +5489,7 @@
                 <h3 class="product-title">${escapeHtml(localizedProductName)}</h3>
                 <div class="product-details">
                   ${escapeHtml(getTranslatedLabel('size', t('sizeFieldLabel', 'Size')))}: ${escapeHtml(localizeProductText(product, 'size', 'sizeEn') || product.size || '')} &nbsp;·&nbsp;
-                  ${escapeHtml(getTranslatedLabel('price', t('priceLabel', 'Price')))}: ${escapeHtml(product.price)} ${currentLanguage === 'ar' ? 'ر.س' : 'SAR'}
+                  ${escapeHtml(getTranslatedLabel('price', t('priceLabel', 'Price')))}: ${escapeHtml(product.price)} ${currentLanguage === 'ar' ? 'د.إ' : 'AED'}
                 </div>
                 ${notesHtml}
               </div>
@@ -5388,7 +5584,7 @@
                 👤 ${escapeHtml(localizeSellerName(p))} &nbsp;·&nbsp;
                 📦 ${(p.type === 'bike' || ['road', 'mountain', 'hybrid', 'electric'].includes(p.type)) ? t('productTypeBike', 'Bicycle') : t('productTypeAccessory', 'Accessory')} &nbsp;·&nbsp;
                 📐 ${escapeHtml(localizeProductText(p, 'size', 'sizeEn') || p.size || '—')} &nbsp;·&nbsp;
-                💰 ${escapeHtml(p.price)} ${currentLanguage === 'ar' ? 'ر.س' : 'SAR'} &nbsp;·&nbsp;
+                💰 ${escapeHtml(p.price)} ${currentLanguage === 'ar' ? 'د.إ' : 'AED'} &nbsp;·&nbsp;
                 🏷 ${t('conditionBadgeLabel', 'Condition')}: ${escapeHtml(localizeCondition(p.condition))}
               </div>
               ${localizeProductText(p, 'notes', 'notesEn') ? `<div class="review-product-notes">📝 ${escapeHtml(localizeProductText(p, 'notes', 'notesEn'))}</div>` : ''}
