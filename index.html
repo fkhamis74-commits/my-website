@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title data-i18n="documentTitle">متجر الدراجات المستعملة</title>
+  <title data-i18n="documentTitle">Pedalex</title>
   <!-- Cairo — an Arabic-optimized webfont (also covers Latin), matching the
        site's primary language. Falls back to system-ui gracefully if this
        fails to load (e.g. no internet while testing locally). -->
@@ -408,12 +408,81 @@
     .logo {
       display: flex;
       align-items: center;
-      gap: 10px;
-      font-size: 1.7rem;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      flex-shrink: 0;
+    }
+
+    .logo-icon-ring {
+      transform-origin: 50px 50px;
+      animation: logoIconSpin 6s linear infinite;
+    }
+
+    @keyframes logoIconSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .logo-text-stack {
+      display: flex;
+      flex-direction: column;
+      line-height: 1;
+    }
+
+    .logo-wordmark {
+      font-size: 1.5rem;
       font-weight: 900;
-      color: var(--accent);
       letter-spacing: -0.5px;
-      text-transform: uppercase;
+      color: var(--text);
+    }
+
+    .logo-wordmark-accent {
+      color: var(--accent);
+    }
+
+    .logo-tagline {
+      font-size: 0.68rem;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: 0.3px;
+      margin-top: 4px;
+    }
+
+    /* Respect the OS-level "reduce motion" setting — the spinning ring is
+       decorative, not informational, so it's safe to just freeze it. */
+    @media (prefers-reduced-motion: reduce) {
+      .logo-icon-ring {
+        animation: none;
+      }
+    }
+
+    /* Hamburger toggle — hidden on desktop, only takes over on the mobile
+       breakpoint below where the nav/user controls collapse into a drawer. */
+    .mobile-menu-toggle {
+      display: none;
+      background: none;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 1.3rem;
+      line-height: 1;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+
+    /* Wraps nav-buttons + user-section as one unit so the header still has
+       just two flex children (logo, this) on desktop — visually equivalent
+       to the old 3-child space-between layout, just grouped together on the
+       opposite side from the logo. */
+    .header-collapsible {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      flex: 1;
     }
 
     .nav-buttons {
@@ -701,41 +770,6 @@
     }
 
     /* Inventory Page */
-    .search-section {
-      display: flex;
-      gap: 14px;
-      margin-bottom: 28px;
-      flex-wrap: wrap;
-      background: var(--card);
-      padding: 18px;
-      border-radius: 16px;
-      border: 2px solid var(--border);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    }
-
-    .search-section input,
-    .search-section select {
-      padding: 12px 14px;
-      border: 2px solid var(--border);
-      border-radius: 12px;
-      background: var(--bg);
-      color: var(--text);
-      font-family: inherit;
-      transition: all 0.4s ease;
-    }
-
-    .search-section input:focus,
-    .search-section select:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
-      outline: none;
-    }
-
-    .search-section input {
-      flex: 1;
-      min-width: 200px;
-    }
-
     .view-toggles {
       display: flex;
       gap: 10px;
@@ -1196,7 +1230,7 @@
       letter-spacing: 0.5px;
     }
 
-    .profile-field value {
+    .profile-field-value {
       font-size: 1.2rem;
       color: var(--text);
       font-weight: 600;
@@ -1219,44 +1253,11 @@
       font-size: 0.9rem;
     }
 
-    .tabs {
-      display: flex;
-      gap: 4px;
-      margin-bottom: 28px;
-      background: var(--card);
-      padding: 8px;
-      border-radius: 16px;
-      border: 2px solid var(--border);
-    }
-
-    .tab-btn {
-      padding: 12px 22px;
-      background: transparent;
-      border: none;
-      color: var(--muted);
-      cursor: pointer;
-      font-weight: 700;
-      border-radius: 12px;
-      transition: all 0.4s ease;
-    }
-
-    .tab-btn:hover {
-      color: var(--accent);
-      background: rgba(37, 99, 235, 0.1);
-    }
-
-    .tab-btn.active {
-      color: white;
-      background: var(--accent);
-      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
-    }
-
-    .tab-content {
-      display: none;
-    }
-
-    .tab-content.active {
-      display: block;
+    .my-products-heading {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 20px;
     }
 
     /* Admin Page */
@@ -1459,10 +1460,6 @@
     }
 
     /* شارة الخصم والتوفير */
-    .product-card-wrapper {
-      position: relative;
-    }
-
     .save-badge {
       position: absolute;
       top: 12px;
@@ -1475,13 +1472,6 @@
       font-weight: 700;
       z-index: 5;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    }
-
-    .product-price-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
     }
 
     .price-original {
@@ -1721,55 +1711,6 @@
       margin-top: 40px;
       font-size: 1.1rem;
       font-weight: 500;
-    }
-
-    /* Settings */
-    .settings-option {
-      background: var(--card);
-      padding: 16px;
-      margin-bottom: 16px;
-      border-radius: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .settings-option label {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      cursor: pointer;
-      flex: 1;
-    }
-
-    .toggle-switch {
-      position: relative;
-      width: 50px;
-      height: 28px;
-      background: var(--border);
-      border-radius: 14px;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-
-    .toggle-switch.active {
-      background: var(--accent);
-    }
-
-    .toggle-switch::after {
-      content: '';
-      position: absolute;
-      width: 24px;
-      height: 24px;
-      background: white;
-      border-radius: 50%;
-      top: 2px;
-      left: 2px;
-      transition: left 0.3s;
-    }
-
-    .toggle-switch.active::after {
-      left: 24px;
     }
 
     /* Empty State */
@@ -2555,14 +2496,37 @@
       display: none;
     }
 
+    /* Dark slate rather than the site's blue accent — gives the chat panel
+       its own identity, distinct from the launcher button (still blue) and
+       the rest of the site's chrome. */
     .chat-panel-header {
-      background: var(--accent);
+      background: #1E293B;
       color: white;
       padding: 14px 16px;
       font-weight: 800;
       display: flex;
       justify-content: space-between;
       align-items: center;
+    }
+
+    .chat-panel-header-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chat-status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10B981;
+      flex-shrink: 0;
+      animation: chatStatusPulse 2s infinite;
+    }
+
+    @keyframes chatStatusPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+      50% { box-shadow: 0 0 0 4px rgba(16, 185, 129, 0); }
     }
 
     .chat-panel-close {
@@ -2614,6 +2578,70 @@
       border: 1px solid rgba(220, 38, 38, 0.3);
     }
 
+    /* Three bouncing dots shown in the bot's bubble while waiting for a
+       reply. Kept separate from an empty text bubble because the model may
+       call search_bikes before producing any text, so the wait can be
+       longer than a beat — this gives visible feedback for that gap. */
+    .chat-typing-dots {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 0;
+    }
+
+    .chat-typing-dots span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--muted);
+      animation: chatTypingBounce 1.2s infinite ease-in-out;
+    }
+
+    .chat-typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+    .chat-typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+
+    @keyframes chatTypingBounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+      30% { transform: translateY(-4px); opacity: 1; }
+    }
+
+    .chat-quick-prompts {
+      display: flex;
+      gap: 6px;
+      padding: 8px 12px;
+      overflow-x: auto;
+      border-top: 1px solid var(--border);
+      background: var(--card);
+    }
+
+    .chat-quick-prompts::-webkit-scrollbar {
+      display: none;
+    }
+
+    .chat-quick-prompt-btn {
+      flex-shrink: 0;
+      white-space: nowrap;
+      font-size: 0.75rem;
+      padding: 6px 12px;
+      border-radius: 50px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .chat-quick-prompt-btn:hover {
+      background: rgba(37, 99, 235, 0.1);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .chat-quick-prompt-btn:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
     .chat-panel-input {
       display: flex;
       gap: 8px;
@@ -2649,9 +2677,33 @@
       cursor: default;
     }
 
-    @media (max-width: 480px) {
+    @media (max-width: 640px) {
       .chat-widget { left: 12px; bottom: 12px; }
-      .chat-panel { width: calc(100vw - 24px); }
+
+      /* Full-screen chat on phones instead of a small floating panel —
+         easier to read/type in, and avoids the panel overflowing a short
+         viewport. */
+      .chat-panel {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100dvh; /* adapts to the browser's shifting address bar, unlike 100vh */
+        max-width: none;
+        max-height: none;
+        border-radius: 0;
+      }
+
+      /* 16px stops iOS Safari from auto-zooming the page when the input
+         gets focus (anything smaller triggers it). */
+      .chat-panel-input input {
+        font-size: 16px;
+      }
+
+      /* Bigger tap target for closing with a thumb. */
+      .chat-panel-close {
+        padding: 8px 12px;
+        font-size: 1.3rem;
+      }
     }
 
     /* ===== التجاوب مع الهواتف والشاشات الصغيرة ===== */
@@ -2661,13 +2713,44 @@
       }
 
       .header {
+        position: relative; /* anchors the collapsible drawer below it */
+      }
+
+      .mobile-menu-toggle {
+        display: block;
+      }
+
+      /* Collapses into a dropdown drawer instead of the old always-visible
+         stacked column — was every nav button + the language select + the
+         language toggle button + the dark-mode switch + the user menu all
+         piled on top of each other, permanently, on every page. */
+      .header-collapsible {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
         flex-direction: column;
         align-items: stretch;
-        gap: 12px;
+        gap: 16px;
+        background: var(--card);
+        border-top: 2px solid var(--border);
+        box-shadow: var(--shadow-lg);
+        padding: 16px 20px 20px;
+        z-index: 99;
+      }
+
+      .header-collapsible.open {
+        display: flex;
       }
 
       .nav-buttons {
-        justify-content: center;
+        flex-direction: column;
+      }
+
+      .user-section {
+        flex-direction: column;
+        align-items: stretch;
       }
 
       .auth-options {
@@ -2814,35 +2897,49 @@
   <div id="app" class="is-hidden">
     <!-- Header -->
     <div class="header">
-      <div class="logo">🚲 <span data-i18n="storeTitle">متجر الدراجات</span></div>
-      <div class="nav-buttons">
-        <button class="nav-btn" onclick="showPage('page-home')" data-i18n="homeButton">الرئيسية</button>
-        <button class="nav-btn" onclick="showPage('page-inventory')" data-i18n="inventoryButton">تصفح الدراجات</button>
-        <button class="nav-btn" onclick="showPage('page-add')" data-i18n="sellBikeButton">بيع دراجتك</button>
-        <button class="nav-btn" onclick="showPage('page-size-guide')" data-i18n="sizeGuideNavButton">دليل المقاسات</button>
-        <button class="nav-btn" onclick="showPage('page-about')" data-i18n="aboutButton">عن الموقع</button>
-        <button class="nav-btn is-hidden" id="admin-btn" onclick="showPage('page-admin')" data-i18n="adminButton">الإدارة</button>
+      <div class="logo">
+        <svg width="42" height="42" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="logo-icon" aria-hidden="true">
+          <circle cx="50" cy="50" r="42" stroke="#2563EB" stroke-width="8" stroke-dasharray="12 6" class="logo-icon-ring" />
+          <path d="M35 25H58C67.9411 25 76 33.0589 76 43C76 52.9411 67.9411 61 58 61H47V75H35V25Z" fill="#1E293B"/>
+          <circle cx="58" cy="43" r="10" fill="#2563EB"/>
+          <circle cx="47" cy="75" r="5" fill="#3B82F6"/>
+        </svg>
+        <div class="logo-text-stack">
+          <span class="logo-wordmark">Pedal<span class="logo-wordmark-accent">ex</span></span>
+          <span class="logo-tagline">سوق الدراجات الهوائية | Bike Marketplace</span>
+        </div>
       </div>
-      <div class="user-section">
-        <select id="languageSelect" class="lang-select" onchange="applyLanguage(this.value)">
-          <option value="ar" data-i18n="languageArabicOption">العربية</option>
-          <option value="en" data-i18n="languageEnglishOption">English</option>
-        </select>
-        <button id="langToggleBtn" class="lang-toggle-btn" onclick="toggleLanguage()">English 🌐</button>
-        <label class="theme-toggle-label">
-          <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()" />
-          <span data-i18n="darkModeLabel">الوضع الليلي</span>
-        </label>
-        <div class="user-dropdown-wrapper">
-          <button class="user-dropdown-trigger" onclick="toggleUserDropdown()">
-            👤 <span id="currentUser"></span> ▾
-          </button>
-          <div class="user-dropdown-menu" id="userDropdownMenu">
-            <button onclick="closeDropdownAndGo('page-profile')" data-i18n="profileButton">👤 ملفي الشخصي</button>
-            <button onclick="closeDropdownAndGo('page-messages')" data-i18n="messagesButton">💬 الرسائل</button>
-            <hr />
-            <button id="signup-btn" class="signup-accent" onclick="exitGuestAndRegister()" data-i18n="signUpButton">📝 تسجيل حساب</button>
-            <button id="logout-btn" class="logout-danger" onclick="handleLogout()" data-i18n="logoutButton">🚪 تسجيل الخروج</button>
+      <button class="mobile-menu-toggle" id="mobileMenuToggle" onclick="toggleMobileNav()" title="القائمة" aria-label="القائمة" data-i18n-title="mobileMenuTitle" data-i18n-aria-label="mobileMenuTitle">☰</button>
+      <div class="header-collapsible" id="headerCollapsible">
+        <div class="nav-buttons">
+          <button class="nav-btn" onclick="showPage('page-home')" data-i18n="homeButton">الرئيسية</button>
+          <button class="nav-btn" onclick="showPage('page-inventory')" data-i18n="inventoryButton">تصفح الدراجات</button>
+          <button class="nav-btn" onclick="showPage('page-add')" data-i18n="sellBikeButton">بيع دراجتك</button>
+          <button class="nav-btn" onclick="showPage('page-size-guide')" data-i18n="sizeGuideNavButton">دليل المقاسات</button>
+          <button class="nav-btn" onclick="showPage('page-about')" data-i18n="aboutButton">عن الموقع</button>
+          <button class="nav-btn is-hidden" id="admin-btn" onclick="showPage('page-admin')" data-i18n="adminButton">الإدارة</button>
+        </div>
+        <div class="user-section">
+          <select id="languageSelect" class="lang-select" onchange="applyLanguage(this.value)">
+            <option value="ar" data-i18n="languageArabicOption">العربية</option>
+            <option value="en" data-i18n="languageEnglishOption">English</option>
+          </select>
+          <button id="langToggleBtn" class="lang-toggle-btn" onclick="toggleLanguage()">English 🌐</button>
+          <label class="theme-toggle-label">
+            <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()" />
+            <span data-i18n="darkModeLabel">الوضع الليلي</span>
+          </label>
+          <div class="user-dropdown-wrapper">
+            <button class="user-dropdown-trigger" onclick="toggleUserDropdown()">
+              👤 <span id="currentUser"></span> ▾
+            </button>
+            <div class="user-dropdown-menu" id="userDropdownMenu">
+              <button onclick="closeDropdownAndGo('page-profile')" data-i18n="profileButton">👤 ملفي الشخصي</button>
+              <button onclick="closeDropdownAndGo('page-messages')" data-i18n="messagesButton">💬 الرسائل</button>
+              <hr />
+              <button id="signup-btn" class="signup-accent" onclick="exitGuestAndRegister()" data-i18n="signUpButton">📝 تسجيل حساب</button>
+              <button id="logout-btn" class="logout-danger" onclick="handleLogout()" data-i18n="logoutButton">🚪 تسجيل الخروج</button>
+            </div>
           </div>
         </div>
       </div>
@@ -2855,7 +2952,7 @@
         <div class="page-hero-bg hero-bg-home"></div>
         <div class="page-hero-content">
           <div class="hero-chip" data-i18n="heroChip">Pre-Loved Bikes</div>
-          <h1 data-i18n="homeTitle">متجر الدراجات المستعملة</h1>
+          <h1 data-i18n="homeTitle">مرحباً بك في Pedalex</h1>
           <p data-i18n="homeSubtitle">بيع واشترِ الدراجات والملحقات مباشرةً من المستخدمين — موثوق وسهل</p>
           <div class="hero-actions">
             <button class="hero-btn hero-btn-primary" onclick="showPage('page-inventory')" data-i18n="browseProductsButton">تصفح المنتجات</button>
@@ -2868,19 +2965,19 @@
         <!-- Category Grid -->
         <h2 class="category-section-title" data-i18n="browseByCategory">تصفح حسب الفئة</h2>
         <div class="category-grid">
-          <div class="category-card" onclick="showPage('page-inventory')">
+          <div class="category-card" onclick="goToInventoryFiltered('bike')">
             <div class="category-card-img category-card-icon cat-gradient-bikes">🚴</div>
             <div class="category-card-overlay" data-i18n="bikesCategory">دراجات هوائية</div>
           </div>
-          <div class="category-card" onclick="showPage('page-inventory')">
+          <div class="category-card" onclick="goToInventoryFiltered('mountain')">
             <div class="category-card-img category-card-icon cat-gradient-mtb">🏔️</div>
             <div class="category-card-overlay" data-i18n="mountainCategory">دراجات جبلية</div>
           </div>
-          <div class="category-card" onclick="showPage('page-inventory')">
+          <div class="category-card" onclick="goToInventoryFiltered('road')">
             <div class="category-card-img category-card-icon cat-gradient-road">🛣️</div>
             <div class="category-card-overlay" data-i18n="roadCategory">دراجات طرق</div>
           </div>
-          <div class="category-card" onclick="showPage('page-inventory')">
+          <div class="category-card" onclick="goToInventoryFiltered('accessory')">
             <div class="category-card-img category-card-icon cat-gradient-acc">⚙️</div>
             <div class="category-card-overlay" data-i18n="accessoriesCategory">ملحقات</div>
           </div>
@@ -3097,15 +3194,15 @@
           <div class="profile-info">
             <div class="profile-field">
               <label data-i18n="nameLabel">الاسم</label>
-              <value id="displayName"></value>
+              <span class="profile-field-value" id="displayName"></span>
             </div>
             <div class="profile-field">
               <label data-i18n="emailLabel">البريد الإلكتروني</label>
-              <value id="displayEmail"></value>
+              <span class="profile-field-value" id="displayEmail"></span>
             </div>
             <div class="profile-field">
               <label data-i18n="phoneLabel">الهاتف</label>
-              <value id="displayPhone"></value>
+              <span class="profile-field-value" id="displayPhone"></span>
             </div>
             <div class="profile-field">
               <label data-i18n="ratingLabel">التقييم</label>
@@ -3117,28 +3214,12 @@
           </div>
         </div>
 
-        <div class="tabs">
-          <button class="tab-btn active" onclick="switchTab('my-products', this)" data-i18n="myProductsTab">منتجاتي</button>
-          <button class="tab-btn" onclick="switchTab('my-purchases', this)" data-i18n="myPurchasesTab">عمليات الشراء</button>
-          <button class="tab-btn" onclick="switchTab('reviews', this)" data-i18n="reviewsTab">التقييمات</button>
-        </div>
-
-        <div id="my-products" class="tab-content active">
-          <div id="myProductsContainer">
-            <!-- User's products will be rendered here -->
-          </div>
-        </div>
-
-        <div id="my-purchases" class="tab-content">
-          <div id="myPurchasesContainer">
-            <!-- Purchase history will be rendered here -->
-          </div>
-        </div>
-
-        <div id="reviews" class="tab-content">
-          <div id="reviewsContainer">
-            <!-- Reviews will be rendered here -->
-          </div>
+        <!-- Purchases/Reviews tabs removed for now — there's no checkout or
+             review-writing flow yet to put real content in them (see
+             renderUserProfile). Re-add once one of those exists. -->
+        <h2 class="my-products-heading" data-i18n="myProductsTab">منتجاتي</h2>
+        <div id="myProductsContainer">
+          <!-- User's products will be rendered here -->
         </div>
       </div>
     </div>
@@ -3446,7 +3527,7 @@
     <!-- Bike Detail Modal -->
     <div class="modal-overlay" id="bikeModal">
       <div class="modal-box">
-        <button class="modal-close" onclick="closeBikeModal()">✕</button>
+        <button class="modal-close" onclick="closeBikeModal()" title="إغلاق" aria-label="إغلاق" data-i18n-title="modalCloseTitle" data-i18n-aria-label="modalCloseTitle">✕</button>
         <div id="modalImageWrap"></div>
         <div class="modal-body">
           <div class="product-type modal-type" id="modalType"></div>
@@ -3468,7 +3549,7 @@
           <div class="modal-actions">
             <button class="btn modal-contact-btn" id="modalContactBtn" data-i18n="modalContactSeller">💬 تواصل مع البائع</button>
             <a class="btn-whatsapp modal-whatsapp-btn is-hidden" id="modalWhatsappBtn" target="_blank" rel="noopener">💬 WhatsApp</a>
-            <button class="action-btn favorite-btn modal-fav-btn" id="modalFavBtn">❤️</button>
+            <button class="action-btn favorite-btn modal-fav-btn" id="modalFavBtn" title="إضافة للمفضلة" aria-label="إضافة للمفضلة" data-i18n-title="addToFavoritesTitle" data-i18n-aria-label="addToFavoritesTitle">❤️</button>
           </div>
         </div>
       </div>
@@ -3477,7 +3558,7 @@
     <!-- Reject Modal -->
     <div class="reject-modal-overlay" id="rejectModal">
       <div class="reject-modal-box">
-        <button class="reject-modal-close" onclick="closeRejectModal()">✕</button>
+        <button class="reject-modal-close" onclick="closeRejectModal()" title="إغلاق" aria-label="إغلاق" data-i18n-title="modalCloseTitle" data-i18n-aria-label="modalCloseTitle">✕</button>
         <h3 data-i18n="rejectTitle">🚫 رفض المنتج</h3>
         <p class="reject-modal-desc" data-i18n="rejectDesc">أرسل ملاحظات واضحة للبائع حتى يتمكن من تصحيح الإعلان.</p>
         <input type="hidden" id="rejectProductId" />
@@ -3494,13 +3575,21 @@
 
     <!-- AI Chat Widget -->
     <div class="chat-widget">
-      <button class="chat-toggle-btn" onclick="toggleChatWidget()" title="مساعد الدردشة" data-i18n-title="chatWidgetTitle">💬</button>
+      <button class="chat-toggle-btn" onclick="toggleChatWidget()" title="مساعد الدردشة" aria-label="مساعد الدردشة" data-i18n-title="chatWidgetTitle" data-i18n-aria-label="chatWidgetTitle">💬</button>
       <div class="chat-panel is-hidden" id="chatPanel">
         <div class="chat-panel-header">
-          <span data-i18n="chatWidgetTitle">💬 مساعد المتجر</span>
-          <button class="chat-panel-close" onclick="toggleChatWidget()">✕</button>
+          <span class="chat-panel-header-title">
+            <span class="chat-status-dot"></span>
+            <span data-i18n="chatWidgetTitle">💬 مساعد المتجر</span>
+          </span>
+          <button class="chat-panel-close" onclick="toggleChatWidget()" title="إغلاق الدردشة" aria-label="إغلاق الدردشة" data-i18n-title="chatCloseTitle" data-i18n-aria-label="chatCloseTitle">✕</button>
         </div>
         <div class="chat-panel-messages" id="chatMessages"></div>
+        <div class="chat-quick-prompts">
+          <button class="chat-quick-prompt-btn" data-i18n="chatQuickPromptSize" onclick="sendQuickPrompt('chatQuickPromptSize', 'Calculate my size')">📏 احسب مقاسي المناسب</button>
+          <button class="chat-quick-prompt-btn" data-i18n="chatQuickPromptBudget" onclick="sendQuickPrompt('chatQuickPromptBudget', 'Bikes under 10,000 AED')">🏷️ دراجات أقل من 10,000 درهم</button>
+          <button class="chat-quick-prompt-btn" data-i18n="chatQuickPromptMaterial" onclick="sendQuickPrompt('chatQuickPromptMaterial', 'Carbon vs Aluminum frames')">🚴 الفرق بين الكربون والألمنيوم</button>
+        </div>
         <div class="chat-panel-input">
           <input type="text" id="chatInput" placeholder="اكتب سؤالك..." data-i18n-placeholder="chatInputPlaceholder" onkeydown="handleChatInputKeydown(event)" />
           <button id="chatSendBtn" onclick="sendChatMessage()" data-i18n="chatSendButton">إرسال</button>
@@ -3519,7 +3608,7 @@
     // ===== TRANSLATIONS =====
     const translations = {
       ar: {
-        documentTitle: 'متجر الدراجات المستعملة',
+        documentTitle: 'Pedalex',
         // Auth
         authWelcome: 'مرحباً بك',
         authSubtitle: 'اختر طريقة الدخول',
@@ -3572,9 +3661,8 @@
         langToggleToArabic: 'عربي 🌐',
 
         // Home
-        storeTitle: 'متجر الدراجات',
         heroChip: 'دراجات مستعملة موثوقة',
-        homeTitle: 'مرحباً بك في متجر الدراجات',
+        homeTitle: 'مرحباً بك في Pedalex',
         homeSubtitle: 'بيع واشترِ الدراجات والملحقات مباشرة من المستخدمين',
         browseProductsButton: 'تصفح المنتجات',
         browseByCategory: 'تصفح حسب الفئة',
@@ -3727,8 +3815,6 @@
         ratingLabel: 'التقييم',
         ratingCountText: '(0 تقييم)',
         myProductsTab: 'منتجاتي',
-        myPurchasesTab: 'عمليات الشراء',
-        reviewsTab: 'التقييمات',
 
         // Messages
         messagesTitle: 'الرسائل',
@@ -3741,11 +3827,17 @@
 
         // AI Chat Widget
         chatWidgetTitle: '💬 مساعد المتجر',
-        chatWidgetGreeting: 'مرحباً! كيف يمكنني مساعدتك في متجر الدراجات اليوم؟',
+        chatWidgetGreeting: 'مرحباً! كيف يمكنني مساعدتك في Pedalex اليوم؟',
         chatInputPlaceholder: 'اكتب سؤالك...',
         chatSendButton: 'إرسال',
         chatErrorMessage: 'تعذّر الوصول إلى المساعد الآن. حاول مرة أخرى.',
         chatEmptyInputAlert: 'اكتب رسالة أولاً',
+        chatQuickPromptSize: '📏 احسب مقاسي المناسب',
+        chatQuickPromptBudget: '🏷️ دراجات أقل من 10,000 درهم',
+        chatQuickPromptMaterial: '🚴 الفرق بين الكربون والألمنيوم',
+        chatCloseTitle: 'إغلاق الدردشة',
+        modalCloseTitle: 'إغلاق',
+        mobileMenuTitle: 'القائمة',
 
         // Admin
         adminTitle: 'لوحة الإدارة',
@@ -3799,8 +3891,6 @@
         moderationPublished: 'منشور',
         moderationRejected: 'مرفوض',
         availabilityLabel: 'حالة التوفر',
-        noReviewsYet: 'لا توجد تقييمات بعد',
-        noPurchasesYet: 'لا توجد مشتريات بعد',
         reviewsCountSuffix: 'تقييم',
         adminNoteLabel: 'ملاحظة الإدارة',
         deleteProductConfirm: 'هل تريد حذف هذا المنتج؟',
@@ -3853,7 +3943,7 @@
         areYouSure: 'هل أنت متأكد؟',
       },
       en: {
-        documentTitle: 'Used Bicycle Store',
+        documentTitle: 'Pedalex',
         // Auth
         authWelcome: 'Welcome',
         authSubtitle: 'Choose how you want to sign in',
@@ -3906,9 +3996,8 @@
         langToggleToArabic: 'Arabic 🌐',
 
         // Home
-        storeTitle: 'Bicycle Store',
         heroChip: 'Trusted Pre-Loved Bikes',
-        homeTitle: 'Welcome to Bicycle Store',
+        homeTitle: 'Welcome to Pedalex',
         homeSubtitle: 'Buy and sell bikes and accessories directly with other riders',
         browseProductsButton: 'Browse Products',
         browseByCategory: 'Browse by Category',
@@ -4061,8 +4150,6 @@
         ratingLabel: 'Rating',
         ratingCountText: '(0 reviews)',
         myProductsTab: 'My Products',
-        myPurchasesTab: 'Purchases',
-        reviewsTab: 'Reviews',
 
         // Messages
         messagesTitle: 'Messages',
@@ -4075,11 +4162,17 @@
 
         // AI Chat Widget
         chatWidgetTitle: '💬 Store Assistant',
-        chatWidgetGreeting: 'Hi! How can I help you with the bike store today?',
+        chatWidgetGreeting: 'Hi! How can I help you with Pedalex today?',
         chatInputPlaceholder: 'Type your question...',
         chatSendButton: 'Send',
         chatErrorMessage: "Couldn't reach the assistant right now. Please try again.",
         chatEmptyInputAlert: 'Type a message first',
+        chatQuickPromptSize: '📏 Calculate my size',
+        chatQuickPromptBudget: '🏷️ Bikes under 10,000 AED',
+        chatQuickPromptMaterial: '🚴 Carbon vs Aluminum frames',
+        chatCloseTitle: 'Close chat',
+        modalCloseTitle: 'Close',
+        mobileMenuTitle: 'Menu',
 
         // Admin
         adminTitle: 'Admin Dashboard',
@@ -4133,8 +4226,6 @@
         moderationPublished: 'Published',
         moderationRejected: 'Rejected',
         availabilityLabel: 'Availability',
-        noReviewsYet: 'No reviews yet',
-        noPurchasesYet: 'No purchases yet',
         reviewsCountSuffix: 'reviews',
         adminNoteLabel: 'Admin note',
         deleteProductConfirm: 'Delete this product?',
@@ -4232,7 +4323,6 @@
     let forgotPasswordUser = null;
     let currentView = 'grid';
     let searchQuery = '';
-    let currentSelectCategory = '';
     let currentSort = 'newest';
     let currentModalProductId = null;
 
@@ -4341,13 +4431,6 @@
     }
 
     // ===== AUTHENTICATION =====
-    function toggleAuthForm() {
-      document.getElementById('login-form').style.display = 
-        document.getElementById('login-form').style.display === 'none' ? 'block' : 'none';
-      document.getElementById('register-form').style.display = 
-        document.getElementById('register-form').style.display === 'none' ? 'block' : 'none';
-    }
-
     function handleLogin() {
       const email = document.getElementById('login-email').value;
       const password = document.getElementById('login-password').value;
@@ -4587,6 +4670,16 @@
         }
       });
 
+      // Icon-only buttons (no visible text) need an explicit aria-label —
+      // without it, screen readers announce the emoji glyph itself rather
+      // than what the button does.
+      document.querySelectorAll('[data-i18n-aria-label]').forEach(el => {
+        const key = el.getAttribute('data-i18n-aria-label');
+        if (translations[lang][key]) {
+          el.setAttribute('aria-label', translations[lang][key]);
+        }
+      });
+
       // The forgot-password button's label depends on which step of the reset flow is active,
       // which the static data-i18n pass above doesn't know about — re-sync it here.
       const forgotBtn = document.getElementById('forgotPasswordActionBtn');
@@ -4617,11 +4710,6 @@
     function toggleLanguage() {
       currentLang = currentLang === 'ar' ? 'en' : 'ar';
       applyLanguage(currentLang);
-
-      // Keep compatibility if a dedicated bike renderer exists.
-      if (typeof renderBikes === 'function') {
-        renderBikes();
-      }
     }
 
     function toggleDarkMode() {
@@ -4637,6 +4725,7 @@
       setActiveNavButtonByPage(pageId);
       window.scrollTo(0, 0);
       closeUserDropdown();
+      closeMobileNav();
       // Populate the conversation sidebar whenever the Messages page is opened directly
       // from the nav (not just when arriving via startConversation).
       if (pageId === 'page-messages' && currentUser) renderMessages();
@@ -4671,6 +4760,27 @@
     document.addEventListener('click', function(e) {
       const wrapper = document.querySelector('.user-dropdown-wrapper');
       if (wrapper && !wrapper.contains(e.target)) closeUserDropdown();
+    });
+
+    // ===== MOBILE NAV DRAWER =====
+    // Only relevant at the ≤768px breakpoint — the toggle button itself is
+    // hidden above that, so this never gets triggered on desktop.
+    function toggleMobileNav() {
+      document.getElementById('headerCollapsible').classList.toggle('open');
+    }
+
+    function closeMobileNav() {
+      document.getElementById('headerCollapsible').classList.remove('open');
+    }
+
+    // close the drawer when clicking outside it (but not on the toggle
+    // button itself, which has its own toggle handler)
+    document.addEventListener('click', function(e) {
+      const drawer = document.getElementById('headerCollapsible');
+      const toggleBtn = document.getElementById('mobileMenuToggle');
+      if (drawer && !drawer.contains(e.target) && !toggleBtn.contains(e.target)) {
+        closeMobileNav();
+      }
     });
 
     // ===== BIKE DETAIL MODAL =====
@@ -4743,6 +4853,8 @@
         closeRejectModal();
       } else if (chatOpen) {
         toggleChatWidget();
+      } else if (document.getElementById('headerCollapsible').classList.contains('open')) {
+        closeMobileNav();
       }
     });
 
@@ -4753,7 +4865,22 @@
       activeTypeFilter = type;
       document.querySelectorAll('.type-tab').forEach(t => t.classList.remove('active'));
       if (btn) btn.classList.add('active');
+      // Keep the category dropdown in sync — they used to be two independent
+      // filters that got silently ANDed together (e.g. tab "Mountain" +
+      // dropdown "Hybrid" => always zero results, no explanation shown).
+      // Now there's one filter state; both controls just reflect it.
+      const categorySelect = document.getElementById('categoryFilter');
+      if (categorySelect) categorySelect.value = type;
       renderInventory();
+    }
+
+    // Used by the home page's category cards — applies the filter (so both
+    // the tab bar and dropdown reflect it) then navigates to the inventory
+    // page, instead of dumping the visitor on the unfiltered full list.
+    function goToInventoryFiltered(type) {
+      const matchingTab = document.querySelector(`.type-tab[onclick="filterByType('${type}', this)"]`);
+      filterByType(type, matchingTab);
+      showPage('page-inventory');
     }
 
     function getTranslatedTerm(category, key) {
@@ -5040,9 +5167,6 @@
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById('page-profile').classList.add('active');
         setActiveNavButtonByPage('page-profile');
-        document.getElementById('my-products').classList.add('active');
-        document.getElementById('my-purchases').classList.remove('active');
-        document.getElementById('reviews').classList.remove('active');
       }, 500);
     }
 
@@ -5101,6 +5225,10 @@
       // Public inventory includes published listing states and hides moderation-only records.
       filtered = filtered.filter(p => !p.status || ['approved', 'available', 'reserved', 'sold'].includes(p.status));
 
+      // Single filter state shared by the type-tab bar and the category
+      // dropdown (see filterByType/filterProducts) — they used to be two
+      // independent filters ANDed together here, which could silently
+      // produce zero results (e.g. tab "Mountain" + dropdown "Hybrid").
       if (activeTypeFilter) {
         if (activeTypeFilter === 'bike') {
           filtered = filtered.filter(p => p.type === 'bike' || ['road', 'mountain', 'hybrid', 'electric'].includes(p.type));
@@ -5109,15 +5237,6 @@
         } else {
           filtered = filtered.filter(p => p.type === activeTypeFilter || p.accessoryType === activeTypeFilter);
         }
-      }
-
-      if (currentSelectCategory) {
-        filtered = filtered.filter(p => {
-          if (currentSelectCategory === 'bike') {
-            return p.type === 'bike' || ['road', 'mountain', 'hybrid', 'electric'].includes(p.type);
-          }
-          return p.type === currentSelectCategory || p.accessoryType === currentSelectCategory;
-        });
       }
 
       if (searchQuery) {
@@ -5205,7 +5324,7 @@
           <div class="product-info">
             <div class="product-card-top-row">
               <span class="status-badge ${statusClass}">${escapeHtml(translateInventoryStatus(status))}</span>
-              <button class="favorite-icon-btn" onclick="event.stopPropagation(); toggleFavorite(${product.id})" title="${t('addToFavoritesTitle', 'Favorite')}">❤️</button>
+              <button class="favorite-icon-btn" onclick="event.stopPropagation(); toggleFavorite(${product.id})" title="${t('addToFavoritesTitle', 'Favorite')}" aria-label="${t('addToFavoritesTitle', 'Favorite')}">❤️</button>
             </div>
             <h3 class="product-title">${escapeHtml(localizedName)}</h3>
             <div class="product-badge-row">
@@ -5227,7 +5346,7 @@
                 ${originalPrice ? `<span class="price-original">${escapeHtml(originalPrice)} ${currency}</span>` : ''}
               </div>
               <div class="product-contact-actions">
-                ${whatsappLink ? `<a class="btn-whatsapp btn-whatsapp-icon" href="${escapeHtml(whatsappLink)}" target="_blank" rel="noopener" title="WhatsApp" onclick="event.stopPropagation()">💬</a>` : ''}
+                ${whatsappLink ? `<a class="btn-whatsapp btn-whatsapp-icon" href="${escapeHtml(whatsappLink)}" target="_blank" rel="noopener" title="WhatsApp" aria-label="WhatsApp" onclick="event.stopPropagation()">💬</a>` : ''}
                 <button class="contact-btn-solid" onclick="startConversation(${product.id})">${t('contactLabel', '💬 Contact')}</button>
               </div>
             </div>
@@ -5256,7 +5375,15 @@
       const searchInput = document.getElementById('searchInput');
       const categoryFilter = document.getElementById('categoryFilter');
       searchQuery = (searchInput?.value || '').trim();
-      currentSelectCategory = categoryFilter?.value || '';
+      activeTypeFilter = categoryFilter?.value || '';
+
+      // Mirror the choice onto the tab bar — highlight the matching tab if
+      // one exists (Hybrid/Electric have none, so all tabs just go inactive
+      // in that case, which is honest: no tab currently represents them).
+      document.querySelectorAll('.type-tab').forEach(t => t.classList.remove('active'));
+      const matchingTab = document.querySelector(`.type-tab[onclick="filterByType('${activeTypeFilter}', this)"]`);
+      if (matchingTab) matchingTab.classList.add('active');
+
       renderInventory();
     }
 
@@ -5530,36 +5657,6 @@
         html += '</div>';
         container.innerHTML = html;
       }
-
-      renderReviewsTab(userReviews);
-      renderPurchasesTab();
-    }
-
-    // Reviews tab — reads currentUser.reviews (empty for every account today since no review
-    // flow exists yet to write to it), but renders real content the moment one does.
-    function renderReviewsTab(userReviews) {
-      const container = document.getElementById('reviewsContainer');
-      if (!container) return;
-      if (!userReviews || userReviews.length === 0) {
-        container.innerHTML = `<div class="empty-state"><p>${t('noReviewsYet', 'No reviews yet')}</p></div>`;
-        return;
-      }
-      container.innerHTML = userReviews.map(r => `
-        <div class="review-card">
-          <div class="review-stars">${'★'.repeat(Math.max(0, Math.min(5, Math.round(r.rating || 5))))}</div>
-          <p class="review-text">${escapeHtml(r.text || '')}</p>
-          <div class="review-author">${escapeHtml(r.author || '')}</div>
-        </div>
-      `).join('');
-    }
-
-    // Purchases tab — there is no order/checkout flow in this app yet (buyers only message
-    // sellers), so there is nothing real to list here. Showing an explicit empty state instead
-    // of leaving the tab blank.
-    function renderPurchasesTab() {
-      const container = document.getElementById('myPurchasesContainer');
-      if (!container) return;
-      container.innerHTML = `<div class="empty-state"><p>${t('noPurchasesYet', 'No purchases yet')}</p></div>`;
     }
 
     async function updateProductAvailability(productId, availability) {
@@ -5595,13 +5692,6 @@
       }
       renderUserProfile();
       renderInventory();
-    }
-
-    function switchTab(tabName, btn) {
-      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
-      document.getElementById(tabName).classList.add('active');
-      if (btn) btn.classList.add('active');
     }
 
     function editProfile() {
@@ -5827,6 +5917,15 @@
       }
     }
 
+    // Fills the input with a translated canned question and sends it —
+    // looked up by key (not a literal string in the onclick) so it stays
+    // correct even if the visitor switches language before clicking.
+    function sendQuickPrompt(key, fallback) {
+      if (chatStreaming) return;
+      document.getElementById('chatInput').value = t(key, fallback);
+      sendChatMessage();
+    }
+
     // textContent (not innerHTML) — chat content is untrusted (user input and
     // model output) and never needs to render as markup here.
     function appendChatBubble(kind, text) {
@@ -5839,6 +5938,18 @@
       container.appendChild(bubble);
       container.scrollTop = container.scrollHeight;
       return bubble;
+    }
+
+    // Three bouncing dots while we wait for the first token — built with
+    // createElement (not innerHTML) even though the markup is static, to
+    // match appendChatBubble's DOM-only approach for anything that touches
+    // the chat message list.
+    function renderTypingDots(bubble) {
+      bubble.textContent = '';
+      const dots = document.createElement('span');
+      dots.className = 'chat-typing-dots';
+      for (let i = 0; i < 3; i++) dots.appendChild(document.createElement('span'));
+      bubble.appendChild(dots);
     }
 
     async function sendChatMessage() {
@@ -5860,10 +5971,17 @@
       input.disabled = true;
       const sendBtn = document.getElementById('chatSendBtn');
       sendBtn.disabled = true;
+      const quickPromptBtns = document.querySelectorAll('.chat-quick-prompt-btn');
+      quickPromptBtns.forEach((btn) => { btn.disabled = true; });
       chatStreaming = true;
 
       const botBubble = appendChatBubble('bot', '');
+      // The model may call search_bikes (see server.js) before it produces
+      // any text, so this can sit for longer than a beat — show a typing
+      // indicator rather than leaving the bubble looking empty/stuck.
+      renderTypingDots(botBubble);
       const container = document.getElementById('chatMessages');
+      container.scrollTop = container.scrollHeight;
 
       try {
         const response = await fetch('/api/chat', {
@@ -5883,9 +6001,17 @@
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          fullText += decoder.decode(value, { stream: true });
-          botBubble.textContent = fullText;
-          container.scrollTop = container.scrollHeight;
+          const chunk = decoder.decode(value, { stream: true });
+          if (chunk) {
+            fullText += chunk;
+            botBubble.textContent = fullText; // replaces the typing dots too
+            container.scrollTop = container.scrollHeight;
+          }
+        }
+        if (!fullText) {
+          // Stream ended with no text at all (e.g. hit the tool-call turn
+          // cap with nothing left to say) — don't leave the dots stuck.
+          botBubble.textContent = '…';
         }
         chatHistory.push({ role: 'assistant', content: fullText || '…' });
       } catch (err) {
@@ -5898,6 +6024,7 @@
         chatStreaming = false;
         input.disabled = false;
         sendBtn.disabled = false;
+        quickPromptBtns.forEach((btn) => { btn.disabled = false; });
         input.focus();
       }
     }
