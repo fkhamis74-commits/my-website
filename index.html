@@ -16,8 +16,8 @@
       --card: #FFFFFF;
       --text: #0F172A;
       --muted: #64748B;
-      --accent: #FF5722;
-      --accent-2: #E64A19;
+      --accent: #2563EB;
+      --accent-2: #1D4ED8;
       --accent-3: #0F172A;
       --accent-4: #2ECC71;
       --accent-5: #9B59B6;
@@ -446,7 +446,7 @@
       background: var(--accent);
       color: white;
       border-color: var(--accent);
-      box-shadow: 0 4px 14px rgba(255, 87, 34, 0.4);
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
     }
 
     .user-section {
@@ -473,7 +473,7 @@
     .logout-btn:hover {
       background: var(--accent-2);
       transform: translateY(-2px);
-      box-shadow: 0 6px 18px rgba(255, 87, 34, 0.4);
+      box-shadow: 0 6px 18px rgba(37, 99, 235, 0.4);
     }
 
     /* Pages */
@@ -545,7 +545,7 @@
     .form-group textarea:focus {
       outline: none;
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.2);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
       background: var(--card);
     }
 
@@ -560,7 +560,7 @@
       font-size: 1rem;
       transition: all 0.25s ease;
       width: 100%;
-      box-shadow: 0 4px 16px rgba(255, 87, 34, 0.35);
+      box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
@@ -568,7 +568,7 @@
     .btn:hover {
       background: var(--accent-2);
       transform: translateY(-3px);
-      box-shadow: 0 8px 24px rgba(255, 87, 34, 0.45);
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.45);
     }
 
     .btn:active {
@@ -651,7 +651,7 @@
     .auth-option-btn:hover {
       border-color: var(--accent);
       transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(255, 87, 34, 0.2);
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.2);
     }
 
     .auth-guest-btn {
@@ -659,13 +659,13 @@
       background: var(--accent);
       border: none;
       color: white;
-      box-shadow: 0 4px 16px rgba(255, 87, 34, 0.35);
+      box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
     }
 
     .auth-guest-btn:hover {
       background: var(--accent-2);
       transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(255, 87, 34, 0.45);
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.45);
     }
 
     .auth-back-btn {
@@ -727,7 +727,7 @@
     .search-section input:focus,
     .search-section select:focus {
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.2);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
       outline: none;
     }
 
@@ -761,7 +761,7 @@
       background: var(--accent);
       color: white;
       border-color: var(--accent);
-      box-shadow: 0 4px 14px rgba(255, 87, 34, 0.35);
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
     }
 
     .products-grid {
@@ -930,18 +930,20 @@
       box-shadow: 0 6px 20px rgba(251, 191, 36, 0.3);
     }
 
+    /* "Contact Seller" gets its own green, distinct from both the site's
+       blue accent and the WhatsApp button's own brand green (#25D366). */
     .contact-btn {
-      background: var(--accent);
+      background: #059669;
       color: white;
-      border-color: var(--accent);
-      box-shadow: 0 4px 14px rgba(255, 87, 34, 0.3);
+      border-color: #059669;
+      box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);
     }
 
     .contact-btn:hover {
-      background: var(--accent-2);
-      border-color: var(--accent-2);
+      background: #047857;
+      border-color: #047857;
       transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(255, 87, 34, 0.4);
+      box-shadow: 0 6px 20px rgba(5, 150, 105, 0.4);
     }
 
     /* Compact icon-only favorite toggle, moved into the card's top row */
@@ -991,20 +993,20 @@
       padding: 10px 22px;
       border-radius: 50px;
       border: none;
-      background: var(--accent);
+      background: #059669;
       color: white;
       font-weight: 700;
       font-size: 0.85rem;
       cursor: pointer;
       white-space: nowrap;
       transition: all 0.25s ease;
-      box-shadow: 0 4px 14px rgba(255, 87, 34, 0.3);
+      box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);
     }
 
     .contact-btn-solid:hover {
-      background: var(--accent-2);
+      background: #047857;
       transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(255, 87, 34, 0.4);
+      box-shadow: 0 6px 20px rgba(5, 150, 105, 0.4);
     }
 
     .products-list {
@@ -1240,13 +1242,13 @@
 
     .tab-btn:hover {
       color: var(--accent);
-      background: rgba(255, 71, 87, 0.1);
+      background: rgba(37, 99, 235, 0.1);
     }
 
     .tab-btn.active {
       color: white;
       background: var(--accent);
-      box-shadow: 0 4px 14px rgba(255, 87, 34, 0.35);
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
     }
 
     .tab-content {
@@ -1562,7 +1564,7 @@
     }
 
     .message-item.active {
-      background: rgba(255, 87, 34, 0.1);
+      background: rgba(37, 99, 235, 0.1);
       border-left: 3px solid var(--accent);
     }
 
@@ -2050,6 +2052,18 @@
       flex: 1;
     }
 
+    /* Same "Contact Seller" green as the card buttons — scoped by ID since
+       this button also carries the generic .btn class (blue by default). */
+    #modalContactBtn {
+      background: #059669;
+      box-shadow: 0 4px 16px rgba(5, 150, 105, 0.35);
+    }
+
+    #modalContactBtn:hover {
+      background: #047857;
+      box-shadow: 0 8px 24px rgba(5, 150, 105, 0.45);
+    }
+
     .modal-fav-btn {
       width: auto;
       padding: 14px 20px;
@@ -2289,7 +2303,7 @@
     }
 
     .status-badge.reserved {
-      background: rgba(255, 87, 34, 0.15);
+      background: rgba(37, 99, 235, 0.15);
       color: var(--accent);
       border: 1px solid var(--accent);
     }
@@ -2401,12 +2415,15 @@
       padding: 12px;
     }
 
+    /* Solid dark "cancel/dismiss" style, distinct from the outlined default
+       so it doesn't compete visually with the green/blue action buttons.
+       Kept pill-shaped (50px) to match its sibling .btn-reject in the same row. */
     .reject-cancel-btn {
       flex: 1;
       padding: 12px;
-      border: 2px solid var(--border);
-      background: none;
-      color: var(--text);
+      border: none;
+      background: #1E293B;
+      color: #E2E8F0;
       border-radius: 50px;
       font-weight: 700;
       cursor: pointer;
@@ -2415,8 +2432,7 @@
     }
 
     .reject-cancel-btn:hover {
-      border-color: var(--accent);
-      color: var(--accent);
+      background: #334155;
     }
 
     /* ===== Admin Review Cards ===== */
@@ -2506,7 +2522,7 @@
       color: white;
       font-size: 1.5rem;
       cursor: pointer;
-      box-shadow: 0 6px 20px rgba(255, 87, 34, 0.45);
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
       transition: transform 0.2s ease;
     }
 
