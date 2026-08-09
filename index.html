@@ -3757,6 +3757,8 @@
         requiredFieldsAlert: 'الرجاء ملء الحقول المطلوبة',
         submitReviewSuccess: '✅ تم إرسال منتجك للمراجعة!\nسيراجع فريق الإدارة إعلانك وسيُنشر بعد الموافقة.',
         noProductsAvailable: 'لا توجد منتجات متاحة',
+        productsLoadErrorText: 'تعذّر تحميل المنتجات من الخادم. هل هو يعمل؟',
+        retryButton: 'إعادة المحاولة',
         noImageFallback: 'لا توجد صورة',
         sizeFieldLabel: 'المقاس',
         frameFieldLabel: 'الهيكل',
@@ -4088,6 +4090,8 @@
         requiredFieldsAlert: 'Please fill required fields',
         submitReviewSuccess: '✅ Your listing was submitted for review!\nAn admin will review it and publish it after approval.',
         noProductsAvailable: 'No products available',
+        productsLoadErrorText: "Couldn't load products from the server. Is it running?",
+        retryButton: 'Retry',
         noImageFallback: 'No Image',
         sizeFieldLabel: 'Size',
         frameFieldLabel: 'Frame',
@@ -4189,7 +4193,12 @@
     // Alias requested by user; kept in sync with currentLanguage.
     let currentLang = 'ar';
     let users = [];
+    // Products live server-side now (server.js /api/products, backed by
+    // products.json) so listings are shared across visitors instead of being
+    // private to each browser's localStorage. `products` is the client-side
+    // cache, refreshed from the API on load and after every mutation.
     let products = [];
+    let productsLoadError = false;
     let messages = {};
     // Conversation metadata keyed by conversationId (`${buyerId}-${sellerId}`), separate from
     // the message bubbles themselves so the sidebar list can be rebuilt after a reload.
@@ -4204,85 +4213,10 @@
     let currentSort = 'newest';
     let currentModalProductId = null;
 
-    // Demo used-bike inventory shown when there are no saved products yet.
-    const demoBikes = [
-      {
-        id: 10001,
-        name: 'Cervelo R5 Disc',
-        type: 'road',
-        price: 14500,
-        originalPrice: 22000,
-        size: '54 cm (M)',
-        condition: 'ممتازة (مفحوصة)',
-        groupset: 'Shimano Ultegra Di2',
-        frameMaterial: 'Carbon',
-        location: 'دبي - الإمارات',
-        locationEn: 'Dubai - UAE',
-        sellerName: 'فهد عبدالله',
-        sellerNameEn: 'Fahad Abdullah',
-        sellerPhone: '+971500000001',
-        sellerEmail: 'seller1@example.com',
-        sellerRating: '4.9 ★',
-        status: 'available',
-        image: 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=600&q=80',
-        notes: 'دراجة طريق احترافية بحالة ممتازة، الصيانة دورية مع غيارات إلكترونية Di2، لم تتعرض لأي حوادث.',
-        notesEn: 'High-performance road bike in excellent condition. Regularly serviced with electronic Di2 shifting and no crash history.',
-        createdAt: '2026-07-30T10:00:00.000Z',
-        favorites: 0
-      },
-      {
-        id: 10002,
-        name: 'Scott Spark RC Team',
-        type: 'mountain',
-        price: 9800,
-        originalPrice: 15000,
-        size: 'L',
-        condition: 'جيدة جداً',
-        groupset: 'SRAM GX Eagle',
-        frameMaterial: 'Carbon',
-        location: 'أبوظبي - الإمارات',
-        locationEn: 'Abu Dhabi - UAE',
-        sellerName: 'علي المنصوري',
-        sellerNameEn: 'Ali Al Mansoori',
-        sellerPhone: '+971500000002',
-        sellerEmail: 'seller2@example.com',
-        sellerRating: '4.8 ★',
-        status: 'available',
-        image: 'https://images.unsplash.com/photo-1532298229144-0ec0c57515c7?auto=format&fit=crop&w=600&q=80',
-        notes: 'دراجة جبلية بامتياز مع نظام تعليق مزدوج كامل ومناسبة للمسارات الجبلية والوعرة.',
-        notesEn: 'Top-tier mountain bike with full dual suspension, ideal for rough and technical trails.',
-        createdAt: '2026-07-31T10:00:00.000Z',
-        favorites: 0
-      },
-      {
-        id: 10003,
-        name: 'Specialized Sirrus X 4.0',
-        type: 'hybrid',
-        price: 3200,
-        originalPrice: 4800,
-        size: 'M',
-        condition: 'ممتازة',
-        groupset: 'Shimano Deore',
-        frameMaterial: 'Aluminum',
-        location: 'الشارقة - الإمارات',
-        locationEn: 'Sharjah - UAE',
-        sellerName: 'أحمد الحمادي',
-        sellerNameEn: 'Ahmed Al Hammadi',
-        sellerPhone: '+971500000003',
-        sellerEmail: 'seller3@example.com',
-        sellerRating: '4.7 ★',
-        status: 'reserved',
-        image: 'https://images.unsplash.com/photo-1507035895480-2b3156c31fc8?auto=format&fit=crop&w=600&q=80',
-        notes: 'دراجة هجين خفيفة ومريحة جداً للتنقل اليومي والتمارين الرياضية داخل المدينة.',
-        notesEn: 'Light and comfortable hybrid bike, perfect for city commuting and everyday fitness rides.',
-        createdAt: '2026-08-01T10:00:00.000Z',
-        favorites: 0
-      }
-    ];
-
     // ===== INITIALIZATION =====
-    function initApp() {
+    async function initApp() {
       loadData();
+      await loadProducts();
       applyLanguage(currentLanguage);
       checkAdmin();
       if (!currentUser) {
@@ -4298,10 +4232,36 @@
       }
     }
 
+    // Products are shared server-side (server.js /api/products) rather than
+    // per-browser localStorage — this fetches the current list into the
+    // in-memory `products` cache that every render function reads from.
+    // Never throws: on failure it leaves `products` empty and sets
+    // productsLoadError so the inventory page can show a real error instead
+    // of a misleading "no products" empty state.
+    async function loadProducts() {
+      try {
+        const res = await fetch('/api/products');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        products = await res.json();
+        productsLoadError = false;
+      } catch (e) {
+        console.error('Error loading products from server:', e);
+        products = [];
+        productsLoadError = true;
+      }
+    }
+
+    // Wired to the "Retry" button shown in the inventory error state.
+    async function retryLoadProducts() {
+      await loadProducts();
+      renderInventory();
+      if (currentUser) renderUserProfile();
+      if (currentUser && currentUser.isAdmin) loadAdminData();
+    }
+
     function loadData() {
       try {
         const userData = localStorage.getItem('bikeStoreUsers');
-        const productsData = localStorage.getItem('bikeStoreProducts');
         const messagesData = localStorage.getItem('bikeStoreMessages');
         const conversationsData = localStorage.getItem('bikeStoreConversations');
         const currentUserData = localStorage.getItem('bikeStoreCurrentUser');
@@ -4324,25 +4284,12 @@
           }];
           localStorage.setItem('bikeStoreUsers', JSON.stringify(users));
         }
-        products = productsData ? JSON.parse(productsData) : [];
-        if (!Array.isArray(products) || products.length === 0) {
-          products = demoBikes.map((bike, index) => ({
-            ...bike,
-            sellerId: 9000 + index,
-            // `status` is moderation state (pending/approved/rejected); demo bikes are
-            // pre-published. `availability` (available/reserved/sold) is separate so the
-            // "for sale" badge doesn't get overwritten by the moderation badge text.
-            availability: bike.status || 'available',
-            status: 'approved'
-          }));
-          localStorage.setItem('bikeStoreProducts', JSON.stringify(products));
-        }
         messages = messagesData ? JSON.parse(messagesData) : {};
         conversations = conversationsData ? JSON.parse(conversationsData) : {};
         currentUser = currentUserData ? JSON.parse(currentUserData) : null;
         currentLanguage = languageData || 'ar';
         currentLang = currentLanguage;
-        
+
         if (darkModeData === 'true') {
           document.body.classList.add('dark-mode');
           document.getElementById('darkModeToggle').checked = true;
@@ -4352,20 +4299,21 @@
       }
     }
 
+    // Products are no longer part of this — they're persisted server-side via
+    // the /api/products endpoints (see loadProducts() and each product
+    // mutation function) as soon as they change, not batched here.
     function saveData() {
       try {
         localStorage.setItem('bikeStoreUsers', JSON.stringify(users));
-        localStorage.setItem('bikeStoreProducts', JSON.stringify(products));
         localStorage.setItem('bikeStoreMessages', JSON.stringify(messages));
         localStorage.setItem('bikeStoreConversations', JSON.stringify(conversations));
         localStorage.setItem('bikeStoreCurrentUser', JSON.stringify(currentUser));
         localStorage.setItem('bikeStoreLanguage', currentLanguage);
       } catch (e) {
-        // Most commonly a quota overflow from large base64 product images.
         console.error('Error saving data:', e);
         alert(currentLanguage === 'ar'
-          ? 'تعذّر حفظ البيانات محليًا (قد تكون المساحة ممتلئة). جرّب صورة أصغر.'
-          : 'Could not save data locally (storage may be full). Try a smaller image.');
+          ? 'تعذّر حفظ البيانات محليًا (قد تكون المساحة ممتلئة).'
+          : 'Could not save data locally (storage may be full).');
       }
     }
 
@@ -4962,7 +4910,7 @@
     }
 
     // ===== PRODUCTS =====
-    function addProduct() {
+    async function addProduct() {
       const name = document.getElementById('productName').value;
       const type = document.getElementById('productType').value;
       const size = document.getElementById('productSize').value;
@@ -4986,8 +4934,9 @@
       const modelEn = autoTranslateTextByGlossary(model, 'en');
       const sellerNameEn = autoTranslateTextByGlossary(currentUser.name, 'en');
 
-      const newProduct = {
-        id: Date.now(),
+      // id/createdAt are assigned server-side (POST /api/products) so two
+      // concurrent submissions can never collide on a client-generated id.
+      const newProductPayload = {
         name,
         nameEn,
         type,
@@ -5008,20 +4957,35 @@
         sellerNameEn,
         sellerPhone: currentUser.phone,
         sellerEmail: currentUser.email,
-        createdAt: new Date().toISOString(),
         favorites: 0,
         status: 'pending',        // moderation state: requires admin approval before publishing
         availability: 'available', // for-sale state, independent of moderation
         adminNotes: ''
       };
 
-      products.push(newProduct);
-      saveData();
+      try {
+        const res = await fetch('/api/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newProductPayload),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        // Refetch rather than just appending the response — picks up
+        // whatever other visitors changed too, not just this submission.
+        await loadProducts();
+      } catch (e) {
+        console.error('Error creating product:', e);
+        alert(currentLanguage === 'ar'
+          ? 'تعذّر نشر المنتج. تأكد من تشغيل الخادم وحاول مرة أخرى.'
+          : 'Could not publish the product. Check the server is running and try again.');
+        return;
+      }
+
       clearForm();
       alert(t('submitReviewSuccess', '✅ Product submitted for review!\nAdmin will review and publish it after approval.'));
       renderInventory();
       renderUserProfile();
-      
+
       // إعادة توجيه تلقائي للملف الشخصي
       setTimeout(() => {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -5074,6 +5038,14 @@
     function renderInventory() {
       const container = document.getElementById('products-container');
       let html = '';
+
+      if (productsLoadError) {
+        container.innerHTML = `<div class="empty-state">
+          <p>${t('productsLoadErrorText', "Couldn't load products from the server. Is it running?")}</p>
+          <button class="btn empty-state-add-btn" onclick="retryLoadProducts()">${t('retryButton', 'Retry')}</button>
+        </div>`;
+        return;
+      }
 
       let filtered = products;
 
@@ -5252,13 +5224,23 @@
       renderInventory();
     }
 
-    function toggleFavorite(productId) {
+    async function toggleFavorite(productId) {
       const product = products.find(p => p.id === productId);
-      if (product) {
-        product.favorites = (product.favorites || 0) + 1;
-        saveData();
-        renderInventory();
+      if (!product) return;
+      const newCount = (product.favorites || 0) + 1;
+      try {
+        const res = await fetch(`/api/products/${productId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ favorites: newCount }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        await loadProducts();
+      } catch (e) {
+        console.error('Error updating favorites:', e);
+        return; // leave the local count as-is rather than show a number that didn't actually save
       }
+      renderInventory();
     }
 
     // ===== MESSAGING =====
@@ -5531,22 +5513,39 @@
       container.innerHTML = `<div class="empty-state"><p>${t('noPurchasesYet', 'No purchases yet')}</p></div>`;
     }
 
-    function updateProductAvailability(productId, availability) {
+    async function updateProductAvailability(productId, availability) {
       const idx = products.findIndex(p => p.id === productId);
       if (idx === -1) return;
-      products[idx].availability = availability;
-      saveData();
+      try {
+        const res = await fetch(`/api/products/${productId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ availability }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        await loadProducts();
+      } catch (e) {
+        console.error('Error updating availability:', e);
+        alert(currentLanguage === 'ar' ? 'تعذّر تحديث حالة التوفر.' : 'Could not update availability.');
+        return;
+      }
       renderUserProfile();
       renderInventory();
     }
 
-    function deleteMyProduct(productId) {
-      if (confirm(t('deleteProductConfirm', 'Delete this product?'))) {
-        products = products.filter(p => p.id !== productId);
-        saveData();
-        renderUserProfile();
-        renderInventory();
+    async function deleteMyProduct(productId) {
+      if (!confirm(t('deleteProductConfirm', 'Delete this product?'))) return;
+      try {
+        const res = await fetch(`/api/products/${productId}`, { method: 'DELETE' });
+        if (!res.ok && res.status !== 404) throw new Error(`HTTP ${res.status}`);
+        await loadProducts();
+      } catch (e) {
+        console.error('Error deleting product:', e);
+        alert(currentLanguage === 'ar' ? 'تعذّر حذف المنتج.' : 'Could not delete the product.');
+        return;
       }
+      renderUserProfile();
+      renderInventory();
     }
 
     function switchTab(tabName, btn) {
@@ -5625,12 +5624,22 @@
     }
 
     // ===== APPROVAL FUNCTIONS =====
-    function approveProduct(productId) {
+    async function approveProduct(productId) {
       const idx = products.findIndex(p => p.id === productId);
       if (idx === -1) return;
-      products[idx].status = 'approved';
-      products[idx].adminNotes = '';
-      saveData();
+      try {
+        const res = await fetch(`/api/products/${productId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'approved', adminNotes: '' }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        await loadProducts();
+      } catch (e) {
+        console.error('Error approving product:', e);
+        alert(currentLanguage === 'ar' ? 'تعذّرت الموافقة على المنتج.' : 'Could not approve the product.');
+        return;
+      }
       renderInventory();
       loadAdminData();
     }
@@ -5645,15 +5654,25 @@
       document.getElementById('rejectModal').classList.remove('open');
     }
 
-    function confirmReject() {
+    async function confirmReject() {
       const productId = parseInt(document.getElementById('rejectProductId').value);
       const notes = document.getElementById('rejectNotes').value.trim();
       if (!notes) { alert(t('rejectReasonRequired', 'Please enter a rejection reason or note for the seller')); return; }
       const idx = products.findIndex(p => p.id === productId);
       if (idx === -1) return;
-      products[idx].status = 'rejected';
-      products[idx].adminNotes = notes;
-      saveData();
+      try {
+        const res = await fetch(`/api/products/${productId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'rejected', adminNotes: notes }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        await loadProducts();
+      } catch (e) {
+        console.error('Error rejecting product:', e);
+        alert(currentLanguage === 'ar' ? 'تعذّر رفض المنتج.' : 'Could not reject the product.');
+        return;
+      }
       closeRejectModal();
       renderInventory();
       renderUserProfile();
@@ -5665,13 +5684,18 @@
       if (e.target === this) closeRejectModal();
     });
 
-    function deleteUser(userId) {
-      if (confirm(t('areYouSure', 'Are you sure?'))) {
-        users = users.filter(u => u.id !== userId);
-        products = products.filter(p => p.sellerId !== userId);
-        saveData();
-        loadAdminData();
-      }
+    async function deleteUser(userId) {
+      if (!confirm(t('areYouSure', 'Are you sure?'))) return;
+      users = users.filter(u => u.id !== userId);
+      const theirProducts = products.filter(p => p.sellerId === userId);
+      // Best-effort cascade — if one delete fails the others still go
+      // through rather than leaving the whole operation half-done.
+      await Promise.allSettled(theirProducts.map(p =>
+        fetch(`/api/products/${p.id}`, { method: 'DELETE' })
+      ));
+      await loadProducts();
+      saveData();
+      loadAdminData();
     }
 
     // Grants or revokes admin/management rights for a user. This is the only in-app way to
@@ -5710,13 +5734,19 @@
       loadAdminData();
     }
 
-    function deleteProduct(productId) {
-      if (confirm(t('areYouSure', 'Are you sure?'))) {
-        products = products.filter(p => p.id !== productId);
-        saveData();
-        loadAdminData();
-        renderInventory();
+    async function deleteProduct(productId) {
+      if (!confirm(t('areYouSure', 'Are you sure?'))) return;
+      try {
+        const res = await fetch(`/api/products/${productId}`, { method: 'DELETE' });
+        if (!res.ok && res.status !== 404) throw new Error(`HTTP ${res.status}`);
+        await loadProducts();
+      } catch (e) {
+        console.error('Error deleting product:', e);
+        alert(currentLanguage === 'ar' ? 'تعذّر حذف المنتج.' : 'Could not delete the product.');
+        return;
       }
+      loadAdminData();
+      renderInventory();
     }
 
     // ===== AI CHAT WIDGET =====

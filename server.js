@@ -233,6 +233,199 @@ async function handleChat(req, res) {
   });
 }
 
+// ---- Products API -------------------------------------------------------------
+// A flat JSON file acts as the shared "database" for product listings — good
+// enough for a small marketplace demo, and simple to inspect/reset by hand.
+// Users, messages, and moderation state still live in each browser's own
+// localStorage; only product listings are shared across visitors here.
+
+const PRODUCTS_FILE = path.join(ROOT, 'products.json');
+const PRODUCT_MAX_BODY_BYTES = 8_000_000; // generous — product images are base64-encoded
+
+// Same starting inventory the app used to seed into localStorage, so a fresh
+// deployment (or a deleted products.json) shows the same demo listings.
+const DEMO_PRODUCTS = [
+  {
+    id: 10001,
+    name: 'Cervelo R5 Disc',
+    type: 'road',
+    price: 14500,
+    originalPrice: 22000,
+    size: '54 cm (M)',
+    condition: 'ممتازة (مفحوصة)',
+    groupset: 'Shimano Ultegra Di2',
+    frameMaterial: 'Carbon',
+    location: 'دبي - الإمارات',
+    locationEn: 'Dubai - UAE',
+    sellerName: 'فهد عبدالله',
+    sellerNameEn: 'Fahad Abdullah',
+    sellerPhone: '+971500000001',
+    sellerEmail: 'seller1@example.com',
+    sellerRating: '4.9 ★',
+    image: 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=600&q=80',
+    notes: 'دراجة طريق احترافية بحالة ممتازة، الصيانة دورية مع غيارات إلكترونية Di2، لم تتعرض لأي حوادث.',
+    notesEn: 'High-performance road bike in excellent condition. Regularly serviced with electronic Di2 shifting and no crash history.',
+    createdAt: '2026-07-30T10:00:00.000Z',
+    favorites: 0,
+    sellerId: 9000,
+    availability: 'available',
+    status: 'approved',
+  },
+  {
+    id: 10002,
+    name: 'Scott Spark RC Team',
+    type: 'mountain',
+    price: 9800,
+    originalPrice: 15000,
+    size: 'L',
+    condition: 'جيدة جداً',
+    groupset: 'SRAM GX Eagle',
+    frameMaterial: 'Carbon',
+    location: 'أبوظبي - الإمارات',
+    locationEn: 'Abu Dhabi - UAE',
+    sellerName: 'علي المنصوري',
+    sellerNameEn: 'Ali Al Mansoori',
+    sellerPhone: '+971500000002',
+    sellerEmail: 'seller2@example.com',
+    sellerRating: '4.8 ★',
+    image: 'https://images.unsplash.com/photo-1532298229144-0ec0c57515c7?auto=format&fit=crop&w=600&q=80',
+    notes: 'دراجة جبلية بامتياز مع نظام تعليق مزدوج كامل ومناسبة للمسارات الجبلية والوعرة.',
+    notesEn: 'Top-tier mountain bike with full dual suspension, ideal for rough and technical trails.',
+    createdAt: '2026-07-31T10:00:00.000Z',
+    favorites: 0,
+    sellerId: 9001,
+    availability: 'available',
+    status: 'approved',
+  },
+  {
+    id: 10003,
+    name: 'Specialized Sirrus X 4.0',
+    type: 'hybrid',
+    price: 3200,
+    originalPrice: 4800,
+    size: 'M',
+    condition: 'ممتازة',
+    groupset: 'Shimano Deore',
+    frameMaterial: 'Aluminum',
+    location: 'الشارقة - الإمارات',
+    locationEn: 'Sharjah - UAE',
+    sellerName: 'أحمد الحمادي',
+    sellerNameEn: 'Ahmed Al Hammadi',
+    sellerPhone: '+971500000003',
+    sellerEmail: 'seller3@example.com',
+    sellerRating: '4.7 ★',
+    image: 'https://images.unsplash.com/photo-1507035895480-2b3156c31fc8?auto=format&fit=crop&w=600&q=80',
+    notes: 'دراجة هجين خفيفة ومريحة جداً للتنقل اليومي والتمارين الرياضية داخل المدينة.',
+    notesEn: 'Light and comfortable hybrid bike, perfect for city commuting and everyday fitness rides.',
+    createdAt: '2026-08-01T10:00:00.000Z',
+    favorites: 0,
+    sellerId: 9002,
+    availability: 'reserved',
+    status: 'approved',
+  },
+];
+
+function loadProductsFromDisk() {
+  if (!fs.existsSync(PRODUCTS_FILE)) {
+    fs.writeFileSync(PRODUCTS_FILE, JSON.stringify(DEMO_PRODUCTS, null, 2));
+    return DEMO_PRODUCTS;
+  }
+  try {
+    const parsed = JSON.parse(fs.readFileSync(PRODUCTS_FILE, 'utf8'));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    console.error('Error reading products.json, treating as empty:', e);
+    return [];
+  }
+}
+
+function saveProductsToDisk(products) {
+  fs.writeFileSync(PRODUCTS_FILE, JSON.stringify(products, null, 2));
+}
+
+function sendJson(res, status, data) {
+  res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+  res.end(JSON.stringify(data));
+}
+
+function readJsonBody(req, maxBytes) {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    let tooBig = false;
+    req.on('data', (chunk) => {
+      body += chunk;
+      if (body.length > maxBytes) {
+        tooBig = true;
+        req.destroy();
+      }
+    });
+    req.on('end', () => {
+      if (tooBig) { reject(Object.assign(new Error('Payload too large'), { status: 413 })); return; }
+      try {
+        resolve(body ? JSON.parse(body) : {});
+      } catch {
+        reject(Object.assign(new Error('Invalid JSON body'), { status: 400 }));
+      }
+    });
+    req.on('error', reject);
+  });
+}
+
+async function handleGetProducts(req, res) {
+  sendJson(res, 200, loadProductsFromDisk());
+}
+
+async function handleCreateProduct(req, res) {
+  let body;
+  try {
+    body = await readJsonBody(req, PRODUCT_MAX_BODY_BYTES);
+  } catch (e) {
+    sendJson(res, e.status || 400, { error: e.message });
+    return;
+  }
+  const products = loadProductsFromDisk();
+  // Server assigns id/createdAt — never trust a client-supplied id, it could
+  // collide with an existing listing.
+  const newProduct = { ...body, id: Date.now(), createdAt: new Date().toISOString() };
+  products.push(newProduct);
+  saveProductsToDisk(products);
+  sendJson(res, 201, newProduct);
+}
+
+async function handleUpdateProduct(req, res, id) {
+  let body;
+  try {
+    body = await readJsonBody(req, PRODUCT_MAX_BODY_BYTES);
+  } catch (e) {
+    sendJson(res, e.status || 400, { error: e.message });
+    return;
+  }
+  const products = loadProductsFromDisk();
+  const idx = products.findIndex((p) => String(p.id) === String(id));
+  if (idx === -1) {
+    sendJson(res, 404, { error: 'Product not found' });
+    return;
+  }
+  // Partial merge (PATCH semantics) — callers send only the fields changing
+  // (availability, moderation status, favorites count, ...).
+  products[idx] = { ...products[idx], ...body, id: products[idx].id };
+  saveProductsToDisk(products);
+  sendJson(res, 200, products[idx]);
+}
+
+async function handleDeleteProduct(req, res, id) {
+  const products = loadProductsFromDisk();
+  const idx = products.findIndex((p) => String(p.id) === String(id));
+  if (idx === -1) {
+    sendJson(res, 404, { error: 'Product not found' });
+    return;
+  }
+  products.splice(idx, 1);
+  saveProductsToDisk(products);
+  res.writeHead(204);
+  res.end();
+}
+
 // ---- Router -----------------------------------------------------------------
 
 const server = http.createServer((req, res) => {
@@ -240,6 +433,18 @@ const server = http.createServer((req, res) => {
 
   if (req.method === 'POST' && urlPath === '/api/chat') {
     handleChat(req, res);
+    return;
+  }
+
+  const productMatch = urlPath.match(/^\/api\/products(?:\/([^/]+))?$/);
+  if (productMatch) {
+    const id = productMatch[1];
+    if (req.method === 'GET' && !id) { handleGetProducts(req, res); return; }
+    if (req.method === 'POST' && !id) { handleCreateProduct(req, res); return; }
+    if (req.method === 'PATCH' && id) { handleUpdateProduct(req, res, id); return; }
+    if (req.method === 'DELETE' && id) { handleDeleteProduct(req, res, id); return; }
+    res.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('405 Method Not Allowed');
     return;
   }
 
