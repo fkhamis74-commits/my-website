@@ -87,16 +87,47 @@ function serveStatic(req, res) {
 // The browser never sees the API key — it only talks to this server, which
 // holds the key and forwards a streamed response from Claude.
 
-const SYSTEM_PROMPT =
+const SITE_SYSTEM_PROMPT =
   'You are a friendly, concise assistant embedded on "متجر الدراجات" ' +
   '(a used-bicycle marketplace website). Help visitors with things like: how ' +
-  'to list a bike for sale, how to browse/filter listings, how the size guide ' +
-  'works, how messaging a seller works, and general questions about buying or ' +
-  'selling a used bike safely. Reply in the same language the visitor writes ' +
-  'in (Arabic or English). Keep answers short — a few sentences unless the ' +
-  'visitor clearly wants more detail. If asked something unrelated to the ' +
-  'site or bikes, answer briefly if you can, but steer back to how you can ' +
-  'help with the marketplace.';
+  'to list a bike for sale, how to browse/filter listings, how messaging a ' +
+  'seller works, and general questions about buying or selling a used bike ' +
+  'safely. Reply in the same language the visitor writes in (Arabic or ' +
+  'English). Keep answers short — a few sentences unless the visitor clearly ' +
+  'wants more detail. If asked something unrelated to the site or bikes, ' +
+  'answer briefly if you can, but steer back to how you can help with the ' +
+  'marketplace.\n\n' +
+  'You can also act as a bike-fitting assistant. If a visitor is looking to ' +
+  'buy, ask for their budget and height if they haven\'t mentioned them. Use ' +
+  'height to suggest a frame size:\n' +
+  '  165–172 cm -> size 50–52 (S)\n' +
+  '  173–180 cm -> size 54 (M)\n' +
+  '  181–188 cm -> size 56 (L)\n' +
+  '  189+ cm   -> size 58+ (XL)\n' +
+  'Only recommend bikes from the "Currently available listings" list below — ' +
+  'never invent a listing that isn\'t in it, and never recommend one that is ' +
+  'reserved/sold/pending. If nothing matches exactly, suggest the closest ' +
+  'available option and say what differs (price, size, condition, etc.).';
+
+// Rebuilt per-request (not cached) so the assistant always sees the current
+// inventory — a listing added, sold, or reserved a minute ago is reflected
+// immediately, without restarting the server.
+function buildSystemPrompt() {
+  const availableListings = loadProductsFromDisk()
+    .filter((p) => p.status === 'approved' && p.availability === 'available')
+    .map((p) => ({
+      name: p.name,
+      type: p.type,
+      price: p.price,
+      size: p.size,
+      condition: p.condition,
+      frameMaterial: p.frameMaterial,
+    }));
+
+  return SITE_SYSTEM_PROMPT +
+    '\n\nCurrently available listings on the site (JSON, only source of truth ' +
+    'for what can be recommended):\n' + JSON.stringify(availableListings, null, 2);
+}
 
 const MAX_MESSAGES = 20;       // cap conversation length sent per request
 const MAX_MESSAGE_CHARS = 4000; // cap each message's length
@@ -209,7 +240,7 @@ async function handleChat(req, res) {
       const stream = client.messages.stream({
         model: 'claude-opus-5',
         max_tokens: MAX_TOKENS,
-        system: SYSTEM_PROMPT,
+        system: buildSystemPrompt(),
         output_config: { effort: 'medium' },
         messages: parsed.messages.map((m) => ({ role: m.role, content: m.content })),
       });
