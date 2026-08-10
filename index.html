@@ -114,6 +114,7 @@
     .hero-bg-home { background-image: url('https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1400'); }
     .hero-bg-inventory { background-image: url('https://images.unsplash.com/photo-1571068316344-75bc76f77890?w=1400'); }
     .hero-bg-add { background-image: url('https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=1400'); }
+    .hero-bg-rides { background-image: url('https://images.unsplash.com/photo-1517649763962-0c623066013b?w=1400'); }
     .hero-bg-profile { background-image: url('https://images.unsplash.com/photo-1530143311094-34d807799e8f?w=1400'); }
     .hero-bg-messages { background-image: url('https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1400'); }
     .hero-bg-admin { background-image: url('https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1400'); }
@@ -1848,7 +1849,7 @@
       background: var(--accent);
       border-color: var(--accent);
       color: white;
-      box-shadow: 0 4px 14px rgba(232,135,42,0.3);
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
     }
 
     /* ===== تنسيقات النافذة المنبثقة (Modal Styles) ===== */
@@ -2472,6 +2473,190 @@
 
     .btn-reject:hover { background: #B91C1C; }
 
+    /* ===== Rides Feature ===== */
+    /* Independent from .type-tab on purpose — that class is queried by
+       filterByType()/filterProducts() with selectors scoped to those exact
+       elements; sharing it here risked one feature's tab-sync logic
+       clobbering the other's "active" state. */
+    .ride-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .ride-tab {
+      padding: 10px 20px;
+      border: 2px solid var(--border);
+      border-radius: 50px;
+      background: var(--card);
+      color: var(--text);
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.25s;
+    }
+
+    .ride-tab:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .ride-tab.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+    }
+
+    .ride-card-body {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+    }
+
+    .ride-card-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .ride-badge {
+      display: inline-block;
+      padding: 5px 12px;
+      background: var(--accent);
+      border-radius: 50px;
+      color: white;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    .ride-badge-organizer { background: #9B59B6; }
+
+    .ride-status-badge {
+      padding: 4px 10px;
+      border-radius: 50px;
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+
+    .ride-status-open { background: rgba(46, 204, 113, 0.15); color: #2ecc71; }
+    .ride-status-full { background: rgba(220, 38, 38, 0.1); color: #DC2626; }
+    .ride-status-pending { background: rgba(245, 158, 11, 0.15); color: #F59E0B; }
+
+    .ride-card-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .ride-card-meta {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .ride-card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .ride-card-tag {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .ride-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: auto;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .ride-card-spots {
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .ride-track-hint {
+      margin-top: 6px;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    /* Ride detail overlay — reuses .modal-overlay/.modal-box/.modal-close/
+       .modal-spec-grid/.modal-spec (same proven modal shell as the product
+       detail modal); only the ride-specific inner content below is new. */
+    .ride-participant-chip {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 6px 14px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .ride-pending-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .ride-pending-name {
+      font-weight: 700;
+      font-size: 0.92rem;
+      color: var(--text);
+    }
+
+    .ride-pending-note {
+      color: var(--muted);
+      font-size: 0.82rem;
+      margin-top: 2px;
+    }
+
+    .ride-accept-btn, .ride-reject-btn {
+      padding: 8px 16px;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 0.82rem;
+      cursor: pointer;
+    }
+
+    .ride-accept-btn { background: #2ecc71; color: white; border: none; }
+    .ride-reject-btn { background: var(--card); color: #DC2626; border: 2px solid #DC2626; }
+
+    .ride-status-banner {
+      border-radius: 10px;
+      padding: 14px;
+      font-weight: 800;
+      font-size: 0.9rem;
+      margin-bottom: 14px;
+    }
+
+    .ride-status-banner-joined { background: rgba(46, 204, 113, 0.12); color: #2ecc71; }
+    .ride-status-banner-pending { background: rgba(245, 158, 11, 0.12); color: #F59E0B; }
+    .ride-status-banner-full { background: rgba(220, 38, 38, 0.1); color: #DC2626; text-align: center; }
+
     /* ===== AI Chat Widget ===== */
     .chat-widget {
       position: fixed;
@@ -2945,6 +3130,7 @@
         <div class="nav-buttons">
           <button class="nav-btn" onclick="showPage('page-home')" data-i18n="homeButton">الرئيسية</button>
           <button class="nav-btn" onclick="showPage('page-inventory')" data-i18n="inventoryButton">تصفح الدراجات</button>
+          <button class="nav-btn" onclick="showPage('page-rides')" data-i18n="ridesNavButton">طلعات الدراجات</button>
           <button class="nav-btn" onclick="showPage('page-add')" data-i18n="sellBikeButton">بيع دراجتك</button>
           <button class="nav-btn" onclick="showPage('page-size-guide')" data-i18n="sizeGuideNavButton">دليل المقاسات</button>
           <button class="nav-btn" onclick="showPage('page-about')" data-i18n="aboutButton">عن الموقع</button>
@@ -3094,6 +3280,137 @@
 
         <div id="products-container">
           <!-- Products will be rendered here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Rides Page -->
+    <div id="page-rides" class="page">
+      <!-- Hero -->
+      <div class="page-hero">
+        <div class="page-hero-bg hero-bg-rides"></div>
+        <div class="page-hero-content">
+          <h1 data-i18n="ridesTitle">طلعات الدراجات</h1>
+          <p data-i18n="ridesSubtitle">نظّم طلعة أو انضم لطلعة قريبة منك</p>
+        </div>
+      </div>
+
+      <div class="container">
+        <div class="ride-tabs">
+          <button class="ride-tab active" id="rideTabBrowse" onclick="switchRideTab('browse')" data-i18n="ridesBrowseTab">الطلعات المتاحة</button>
+          <button class="ride-tab" id="rideTabCreate" onclick="switchRideTab('create')" data-i18n="ridesCreateTab">+ إنشاء طلعة</button>
+          <button class="ride-tab" id="rideTabMine" onclick="switchRideTab('mine')">
+            <span data-i18n="ridesMineTab">طلعاتي</span> (<span id="rideMineCount">0</span>)
+          </button>
+        </div>
+
+        <!-- Browse -->
+        <div id="rideBrowseSection">
+          <div id="ridesLoadErrorContainer"></div>
+          <div id="ridesBrowseContainer">
+            <!-- Rides will be rendered here -->
+          </div>
+        </div>
+
+        <!-- Create -->
+        <div id="rideCreateSection" class="is-hidden">
+          <div class="form-section" style="max-width:760px;margin:0 auto;">
+            <h2 data-i18n="ridesCreateTitle">إنشاء طلعة جديدة</h2>
+            <p class="muted-text" data-i18n="ridesCreateDesc">حدد المضمار والوقت وشروط الانضمام، وستصلك طلبات الانضمام لقبولها أو رفضها.</p>
+
+            <h3 data-i18n="ridesTrackDetailsTitle" style="margin:20px 0 16px;font-size:1rem;border-bottom:2px solid var(--border);padding-bottom:10px;">تفاصيل المضمار</h3>
+            <div class="form-grid full" style="margin-bottom:8px;">
+              <div class="form-group">
+                <label data-i18n="ridesTitleLabel">عنوان الطلعة</label>
+                <input type="text" id="rideTitle" placeholder="مثال: طلعة صباحية - مضمار جميرا" data-i18n-placeholder="ridesTitlePlaceholder" />
+              </div>
+            </div>
+            <div class="form-grid" style="margin-bottom:20px;">
+              <div class="form-group">
+                <label data-i18n="ridesTrackLabel">اسم المضمار/المسار</label>
+                <input type="text" id="rideTrack" list="uaeTracksList" placeholder="ابحث عن مضمار في الإمارات..." data-i18n-placeholder="ridesTrackPlaceholder" onchange="onRideTrackChange()" />
+                <datalist id="uaeTracksList"></datalist>
+                <div class="ride-track-hint" data-i18n="ridesTrackHint">اختر من مضامير الإمارات المعروفة أو اكتب اسم مضمار آخر — اختيار مضمار من القائمة يعبّي الموقع تلقائياً.</div>
+              </div>
+              <div class="form-group">
+                <label data-i18n="ridesStartPointLabel">نقطة الانطلاق</label>
+                <input type="text" id="rideStartPoint" placeholder="مثال: بوابة 2 - المضمار" data-i18n-placeholder="ridesStartPointPlaceholder" />
+              </div>
+              <div class="form-group full" style="grid-column:1 / -1;">
+                <label data-i18n="ridesLocationLabel">الموقع (المدينة/المنطقة)</label>
+                <input type="text" id="rideLocation" placeholder="مثال: دبي - جميرا" data-i18n-placeholder="ridesLocationPlaceholder" />
+              </div>
+              <div class="form-group">
+                <label data-i18n="ridesDateLabel">التاريخ</label>
+                <input type="date" id="rideDate" />
+              </div>
+              <div class="form-group">
+                <label data-i18n="ridesTimeLabel">الوقت</label>
+                <input type="time" id="rideTime" />
+              </div>
+              <div class="form-group">
+                <label data-i18n="ridesDistanceLabel">المسافة التقريبية (كم)</label>
+                <input type="number" min="0" id="rideDistance" placeholder="25" />
+              </div>
+              <div class="form-group">
+                <label data-i18n="ridesDifficultyLabel">درجة صعوبة المسار</label>
+                <select id="rideDifficulty">
+                  <option value="easy" data-i18n="ridesDifficultyEasy">سهل</option>
+                  <option value="medium" data-i18n="ridesDifficultyMedium" selected>متوسط</option>
+                  <option value="hard" data-i18n="ridesDifficultyHard">صعب</option>
+                </select>
+              </div>
+              <div class="form-group full" style="grid-column:1 / -1;">
+                <label data-i18n="ridesSpeedLabel">السرعة المتوقعة</label>
+                <input type="text" id="rideSpeed" placeholder="مثال: 25-28 كم/س" data-i18n-placeholder="ridesSpeedPlaceholder" />
+              </div>
+            </div>
+
+            <h3 data-i18n="ridesJoinConditionsTitle" style="margin:20px 0 16px;font-size:1rem;border-bottom:2px solid var(--border);padding-bottom:10px;">شروط الانضمام</h3>
+            <div class="form-grid" style="margin-bottom:24px;">
+              <div class="form-group">
+                <label data-i18n="ridesBikeTypeLabel">نوع الدراجة المطلوب</label>
+                <select id="rideBikeType">
+                  <option value="road" data-i18n="ridesBikeTypeRoad">طريق (Road)</option>
+                  <option value="mtb" data-i18n="ridesBikeTypeMtb">جبلية (MTB)</option>
+                  <option value="any" data-i18n="ridesBikeTypeAny">أي نوع</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label data-i18n="ridesGenderLabel">الجنس المسموح</label>
+                <select id="rideGender">
+                  <option value="mixed" data-i18n="ridesGenderMixed">مختلط</option>
+                  <option value="male" data-i18n="ridesGenderMale">رجال فقط</option>
+                  <option value="female" data-i18n="ridesGenderFemale">نساء فقط</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label data-i18n="ridesLevelLabel">المستوى المطلوب للمشاركين</label>
+                <select id="rideLevel">
+                  <option value="beginner" data-i18n="ridesLevelBeginner">مبتدئ</option>
+                  <option value="intermediate" data-i18n="ridesLevelIntermediate" selected>متوسط</option>
+                  <option value="advanced" data-i18n="ridesLevelAdvanced">متقدم</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label data-i18n="ridesMaxParticipantsLabel">الحد الأقصى للمشاركين</label>
+                <input type="number" min="2" max="60" id="rideMaxParticipants" value="8" />
+              </div>
+              <div class="form-group full" style="grid-column:1 / -1;">
+                <label data-i18n="ridesNotesLabel">ملاحظات إضافية للمشاركين</label>
+                <textarea id="rideNotes" rows="3" placeholder="مثال: الرجاء ارتداء الخوذة والالتزام بوقت الانطلاق" data-i18n-placeholder="ridesNotesPlaceholder"></textarea>
+              </div>
+            </div>
+
+            <button class="btn" id="rideCreateSubmitBtn" onclick="submitCreateRide()" data-i18n="ridesCreateSubmit">إنشاء الطلعة</button>
+          </div>
+        </div>
+
+        <!-- Mine -->
+        <div id="rideMineSection" class="is-hidden">
+          <div id="ridesMineContainer">
+            <!-- User's rides will be rendered here -->
+          </div>
         </div>
       </div>
     </div>
@@ -3600,6 +3917,60 @@
       </div>
     </div>
 
+    <!-- Ride Detail Modal -->
+    <div class="modal-overlay" id="rideModal">
+      <div class="modal-box">
+        <button class="modal-close" onclick="closeRideModal()" title="إغلاق" aria-label="إغلاق" data-i18n-title="modalCloseTitle" data-i18n-aria-label="modalCloseTitle">✕</button>
+        <div class="modal-body">
+          <span class="ride-badge" id="rideModalBikeType"></span>
+          <h2 class="modal-title" id="rideModalTitle" style="margin-top:12px;"></h2>
+          <div class="ride-card-meta" id="rideModalOrganizer" style="margin-bottom:20px;"></div>
+
+          <div class="modal-spec-grid" id="rideModalSpecs"></div>
+
+          <div class="modal-notes is-hidden" id="rideModalNotesWrap">
+            <span id="rideModalNotes"></span>
+          </div>
+
+          <div style="margin-bottom:22px;">
+            <div style="font-weight:800;font-size:0.95rem;margin-bottom:10px;" id="rideModalParticipantsHeading"></div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;" id="rideModalParticipantsChips"></div>
+          </div>
+
+          <!-- Organizer: manage join requests -->
+          <div class="is-hidden" id="rideModalOrganizerSection" style="border-top:1px solid var(--border);padding-top:20px;">
+            <div style="font-weight:800;font-size:0.95rem;margin-bottom:12px;" id="rideModalPendingHeading"></div>
+            <div id="rideModalPendingList" style="display:flex;flex-direction:column;gap:10px;"></div>
+            <p class="muted-text is-hidden" id="rideModalNoPending" data-i18n="ridesNoPendingRequests">لا توجد طلبات انضمام حالياً.</p>
+          </div>
+
+          <!-- Joined: can leave -->
+          <div class="is-hidden" id="rideModalJoinedSection" style="border-top:1px solid var(--border);padding-top:20px;">
+            <div class="ride-status-banner ride-status-banner-joined" data-i18n="ridesJoinedBanner">✅ أنت منضم لهذه الطلعة</div>
+            <button class="reject-cancel-btn" onclick="leaveCurrentRide()" data-i18n="ridesLeaveButton">مغادرة الطلعة</button>
+          </div>
+
+          <!-- Pending self: can cancel -->
+          <div class="is-hidden" id="rideModalPendingSelfSection" style="border-top:1px solid var(--border);padding-top:20px;">
+            <div class="ride-status-banner ride-status-banner-pending" data-i18n="ridesPendingBanner">⏳ طلبك قيد المراجعة من المنظم</div>
+            <button class="reject-cancel-btn" onclick="cancelMyRideRequest()" data-i18n="ridesCancelRequestButton">إلغاء الطلب</button>
+          </div>
+
+          <!-- Can join -->
+          <div class="is-hidden" id="rideModalJoinSection" style="border-top:1px solid var(--border);padding-top:20px;">
+            <label style="display:block;margin-bottom:8px;font-weight:700;font-size:0.85rem;" data-i18n="ridesJoinNoteLabel">رسالة للمنظم (اختياري)</label>
+            <textarea id="rideJoinNoteInput" rows="3" placeholder="مثال: لدي دراجة طريق ومستواي متوسط" data-i18n-placeholder="ridesJoinNotePlaceholder" style="width:100%;padding:13px;border:2px solid var(--border);border-radius:12px;font-size:0.9rem;background:var(--bg);color:var(--text);font-family:inherit;box-sizing:border-box;resize:vertical;margin-bottom:14px;"></textarea>
+            <button class="btn" onclick="requestJoinCurrentRide()" data-i18n="ridesRequestJoinButton">إرسال طلب انضمام</button>
+          </div>
+
+          <!-- Full, blocked -->
+          <div class="is-hidden" id="rideModalFullSection" style="border-top:1px solid var(--border);padding-top:20px;">
+            <div class="ride-status-banner ride-status-banner-full" data-i18n="ridesFullBanner">العدد مكتمل لهذه الطلعة</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- AI Chat Widget -->
     <div class="chat-widget">
       <button class="chat-toggle-btn" onclick="toggleChatWidget()" title="مساعد الدردشة" aria-label="مساعد الدردشة" data-i18n-title="chatWidgetTitle" data-i18n-aria-label="chatWidgetTitle">💬</button>
@@ -3849,6 +4220,83 @@
         youPrefix: 'أنت: ',
         messageInputPlaceholder: 'اكتب رسالتك...',
         sendButton: 'إرسال',
+
+        // Rides
+        ridesNavButton: 'طلعات الدراجات',
+        ridesTitle: 'طلعات الدراجات',
+        ridesSubtitle: 'نظّم طلعة أو انضم لطلعة قريبة منك',
+        ridesBrowseTab: 'الطلعات المتاحة',
+        ridesCreateTab: '+ إنشاء طلعة',
+        ridesMineTab: 'طلعاتي',
+        ridesCreateTitle: 'إنشاء طلعة جديدة',
+        ridesCreateDesc: 'حدد المضمار والوقت وشروط الانضمام، وستصلك طلبات الانضمام لقبولها أو رفضها.',
+        ridesTrackDetailsTitle: 'تفاصيل المضمار',
+        ridesTitleLabel: 'عنوان الطلعة',
+        ridesTitlePlaceholder: 'مثال: طلعة صباحية - مضمار جميرا',
+        ridesTrackLabel: 'اسم المضمار/المسار',
+        ridesTrackPlaceholder: 'ابحث عن مضمار في الإمارات...',
+        ridesTrackHint: 'اختر من مضامير الإمارات المعروفة أو اكتب اسم مضمار آخر — اختيار مضمار من القائمة يعبّي الموقع تلقائياً.',
+        ridesStartPointLabel: 'نقطة الانطلاق',
+        ridesStartPointPlaceholder: 'مثال: بوابة 2 - المضمار',
+        ridesLocationLabel: 'الموقع (المدينة/المنطقة)',
+        ridesLocationPlaceholder: 'مثال: دبي - جميرا',
+        ridesDateLabel: 'التاريخ',
+        ridesTimeLabel: 'الوقت',
+        ridesDistanceLabel: 'المسافة التقريبية (كم)',
+        ridesDifficultyLabel: 'درجة صعوبة المسار',
+        ridesDifficultyEasy: 'سهل',
+        ridesDifficultyMedium: 'متوسط',
+        ridesDifficultyHard: 'صعب',
+        ridesSpeedLabel: 'السرعة المتوقعة',
+        ridesSpeedPlaceholder: 'مثال: 25-28 كم/س',
+        ridesJoinConditionsTitle: 'شروط الانضمام',
+        ridesBikeTypeLabel: 'نوع الدراجة المطلوب',
+        ridesBikeTypeRoad: 'طريق (Road)',
+        ridesBikeTypeMtb: 'جبلية (MTB)',
+        ridesBikeTypeAny: 'أي نوع',
+        ridesGenderLabel: 'الجنس المسموح',
+        ridesGenderMixed: 'مختلط',
+        ridesGenderMale: 'رجال فقط',
+        ridesGenderFemale: 'نساء فقط',
+        ridesLevelLabel: 'المستوى المطلوب للمشاركين',
+        ridesLevelBeginner: 'مبتدئ',
+        ridesLevelIntermediate: 'متوسط',
+        ridesLevelAdvanced: 'متقدم',
+        ridesMaxParticipantsLabel: 'الحد الأقصى للمشاركين',
+        ridesNotesLabel: 'ملاحظات إضافية للمشاركين',
+        ridesNotesPlaceholder: 'مثال: الرجاء ارتداء الخوذة والالتزام بوقت الانطلاق',
+        ridesCreateSubmit: 'إنشاء الطلعة',
+        ridesNoPendingRequests: 'لا توجد طلبات انضمام حالياً.',
+        ridesJoinedBanner: '✅ أنت منضم لهذه الطلعة',
+        ridesLeaveButton: 'مغادرة الطلعة',
+        ridesPendingBanner: '⏳ طلبك قيد المراجعة من المنظم',
+        ridesCancelRequestButton: 'إلغاء الطلب',
+        ridesJoinNoteLabel: 'رسالة للمنظم (اختياري)',
+        ridesJoinNotePlaceholder: 'مثال: لدي دراجة طريق ومستواي متوسط',
+        ridesRequestJoinButton: 'إرسال طلب انضمام',
+        ridesFullBanner: 'العدد مكتمل لهذه الطلعة',
+        ridesLoadErrorText: 'تعذّر تحميل الطلعات من الخادم. هل هو يعمل؟',
+        ridesNoBrowseRides: 'لا توجد طلعات متاحة حالياً.',
+        ridesCreateFirstButton: 'أنشئ أول طلعة',
+        ridesNoMineRides: 'لم تنشئ أو تنضم لأي طلعة بعد.',
+        ridesKm: 'كم',
+        ridesLevelPrefix: 'مستوى',
+        ridesDifficultyPrefix: 'صعوبة',
+        ridesLedByPrefix: 'بقيادة',
+        ridesParticipantsSuffix: 'مشاركين',
+        ridesViewDetails: 'عرض التفاصيل',
+        ridesRoleOrganizer: 'منظم',
+        ridesRoleParticipant: 'مشارك',
+        ridesRequestsSuffix: 'طلب',
+        ridesStatusFull: 'مكتمل العدد',
+        ridesStatusOpen: 'يوجد مقاعد',
+        ridesDateTimeLabel: 'التاريخ والوقت',
+        ridesDistanceDifficultyLabel: 'المسافة والصعوبة',
+        ridesParticipantsHeading: 'المشاركون',
+        ridesPendingRequestsHeading: 'طلبات الانضمام',
+        ridesAcceptButton: 'قبول',
+        ridesRejectButton: 'رفض',
+        ridesFillRequiredAlert: 'الرجاء تعبئة عنوان الطلعة والمضمار والتاريخ والوقت',
 
         // AI Chat Widget
         chatWidgetTitle: '💬 مساعد المتجر',
@@ -4183,6 +4631,83 @@
         messageInputPlaceholder: 'Type your message...',
         sendButton: 'Send',
 
+        // Rides
+        ridesNavButton: 'Group Rides',
+        ridesTitle: 'Group Rides',
+        ridesSubtitle: 'Organize a ride or join one near you',
+        ridesBrowseTab: 'Available Rides',
+        ridesCreateTab: '+ Create a Ride',
+        ridesMineTab: 'My Rides',
+        ridesCreateTitle: 'Create a New Ride',
+        ridesCreateDesc: "Set the track, time, and join conditions — join requests will come to you to accept or reject.",
+        ridesTrackDetailsTitle: 'Track Details',
+        ridesTitleLabel: 'Ride Title',
+        ridesTitlePlaceholder: 'e.g. Morning ride - Jumeirah Track',
+        ridesTrackLabel: 'Track / Trail Name',
+        ridesTrackPlaceholder: 'Search for a track in the UAE...',
+        ridesTrackHint: 'Pick a known UAE track or type another name — picking one from the list auto-fills the location.',
+        ridesStartPointLabel: 'Starting Point',
+        ridesStartPointPlaceholder: 'e.g. Gate 2 - Track',
+        ridesLocationLabel: 'Location (City/Area)',
+        ridesLocationPlaceholder: 'e.g. Dubai - Jumeirah',
+        ridesDateLabel: 'Date',
+        ridesTimeLabel: 'Time',
+        ridesDistanceLabel: 'Approximate Distance (km)',
+        ridesDifficultyLabel: 'Track Difficulty',
+        ridesDifficultyEasy: 'Easy',
+        ridesDifficultyMedium: 'Medium',
+        ridesDifficultyHard: 'Hard',
+        ridesSpeedLabel: 'Expected Speed',
+        ridesSpeedPlaceholder: 'e.g. 25-28 km/h',
+        ridesJoinConditionsTitle: 'Join Conditions',
+        ridesBikeTypeLabel: 'Required Bike Type',
+        ridesBikeTypeRoad: 'Road',
+        ridesBikeTypeMtb: 'Mountain (MTB)',
+        ridesBikeTypeAny: 'Any type',
+        ridesGenderLabel: 'Allowed Gender',
+        ridesGenderMixed: 'Mixed',
+        ridesGenderMale: 'Men only',
+        ridesGenderFemale: 'Women only',
+        ridesLevelLabel: 'Required Participant Level',
+        ridesLevelBeginner: 'Beginner',
+        ridesLevelIntermediate: 'Intermediate',
+        ridesLevelAdvanced: 'Advanced',
+        ridesMaxParticipantsLabel: 'Maximum Participants',
+        ridesNotesLabel: 'Additional Notes for Participants',
+        ridesNotesPlaceholder: 'e.g. Please wear a helmet and be on time',
+        ridesCreateSubmit: 'Create Ride',
+        ridesNoPendingRequests: 'No join requests right now.',
+        ridesJoinedBanner: "✅ You're in this ride",
+        ridesLeaveButton: 'Leave Ride',
+        ridesPendingBanner: "⏳ Your request is awaiting the organizer's review",
+        ridesCancelRequestButton: 'Cancel Request',
+        ridesJoinNoteLabel: 'Message to the organizer (optional)',
+        ridesJoinNotePlaceholder: 'e.g. I have a road bike, intermediate level',
+        ridesRequestJoinButton: 'Send Join Request',
+        ridesFullBanner: 'This ride is full',
+        ridesLoadErrorText: "Couldn't load rides from the server. Is it running?",
+        ridesNoBrowseRides: 'No rides available right now.',
+        ridesCreateFirstButton: 'Create the first ride',
+        ridesNoMineRides: "You haven't created or joined any ride yet.",
+        ridesKm: 'km',
+        ridesLevelPrefix: 'Level',
+        ridesDifficultyPrefix: 'Difficulty',
+        ridesLedByPrefix: 'Led by',
+        ridesParticipantsSuffix: 'participants',
+        ridesViewDetails: 'View details',
+        ridesRoleOrganizer: 'Organizer',
+        ridesRoleParticipant: 'Participant',
+        ridesRequestsSuffix: 'requests',
+        ridesStatusFull: 'Full',
+        ridesStatusOpen: 'Spots open',
+        ridesDateTimeLabel: 'Date & Time',
+        ridesDistanceDifficultyLabel: 'Distance & Difficulty',
+        ridesParticipantsHeading: 'Participants',
+        ridesPendingRequestsHeading: 'Join Requests',
+        ridesAcceptButton: 'Accept',
+        ridesRejectButton: 'Reject',
+        ridesFillRequiredAlert: 'Please fill in the ride title, track, date, and time',
+
         // AI Chat Widget
         chatWidgetTitle: '💬 Store Assistant',
         chatWidgetGreeting: 'Hi! How can I help you with Pedalex today?',
@@ -4349,6 +4874,15 @@
     let currentSort = 'newest';
     let currentModalProductId = null;
 
+    // Rides share the exact same server-backed pattern as products (server.js
+    // /api/rides, backed by rides.json) — two different visitors need to see
+    // and act on the same ride (an organizer accepting a request only makes
+    // sense if both people see the same record), so localStorage won't do.
+    let rides = [];
+    let ridesLoadError = false;
+    let activeRideTab = 'browse';
+    let selectedRideId = null;
+
     // ===== INITIALIZATION =====
     async function initApp() {
       loadData();
@@ -4393,6 +4927,28 @@
       renderInventory();
       if (currentUser) renderUserProfile();
       if (currentUser && currentUser.isAdmin) loadAdminData();
+    }
+
+    // Loaded lazily (on first visit to the Rides page) rather than eagerly at
+    // startup like products — same reasoning as messages/admin data being
+    // fetched on-demand, so app startup doesn't wait on data that may not be
+    // viewed this session.
+    async function loadRides() {
+      try {
+        const res = await fetch('/api/rides');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        rides = await res.json();
+        ridesLoadError = false;
+      } catch (e) {
+        console.error('Error loading rides from server:', e);
+        rides = [];
+        ridesLoadError = true;
+      }
+    }
+
+    async function retryLoadRides() {
+      await loadRides();
+      renderRidesPage();
     }
 
     function loadData() {
@@ -4751,6 +5307,10 @@
       // Populate the conversation sidebar whenever the Messages page is opened directly
       // from the nav (not just when arriving via startConversation).
       if (pageId === 'page-messages' && currentUser) renderMessages();
+      if (pageId === 'page-rides' && currentUser) {
+        populateRideTracksDatalist();
+        loadRides().then(renderRidesPage);
+      }
     }
 
     function setActiveNavButtonByPage(pageId) {
@@ -4871,6 +5431,8 @@
       if (e.key !== 'Escape') return;
       if (document.getElementById('bikeModal').classList.contains('open')) {
         closeBikeModal();
+      } else if (document.getElementById('rideModal').classList.contains('open')) {
+        closeRideModal();
       } else if (document.getElementById('rejectModal').classList.contains('open')) {
         closeRejectModal();
       } else if (chatOpen) {
@@ -5604,6 +6166,432 @@
       saveData();
       input.value = '';
       renderMessages();
+    }
+
+    // ===== RIDES =====
+    const UAE_TRACKS = [
+      { name: 'مضمار القدرة للدراجات', location: 'دبي - القدرة' },
+      { name: 'مضمار ند الشبا للدراجات', location: 'دبي - ند الشبا' },
+      { name: 'مضمار جميرا للدراجات', location: 'دبي - جميرا' },
+      { name: 'مسار المرموم للدراجات', location: 'دبي - المرموم' },
+      { name: 'مضمار حتا الجبلي', location: 'حتا - دبي' },
+      { name: 'كورنيش أبوظبي', location: 'أبوظبي - الكورنيش' },
+      { name: 'مضمار جزيرة الحديريات', location: 'أبوظبي - الحديريات' },
+      { name: 'مضمار الوثبة للدراجات', location: 'أبوظبي - الوثبة' },
+      { name: 'أبوظبي لوب (Abu Dhabi Loop)', location: 'أبوظبي' },
+      { name: 'مضمار مرسى ياس (Yas Marina Circuit)', location: 'أبوظبي - جزيرة ياس' },
+      { name: 'مضمار جبل حفيت', location: 'العين - جبل حفيت' },
+      { name: 'واجهة المجاز المائية', location: 'الشارقة - المجاز' },
+      { name: 'كورنيش الشارقة', location: 'الشارقة - الكورنيش' },
+      { name: 'كورنيش عجمان', location: 'عجمان - الكورنيش' },
+      { name: 'كورنيش الفجيرة', location: 'الفجيرة - الكورنيش' },
+      { name: 'مضمار جبل جيس الجبلي', location: 'رأس الخيمة - جبل جيس' },
+      { name: 'كورنيش أم القيوين', location: 'أم القيوين - الكورنيش' },
+    ];
+
+    function populateRideTracksDatalist() {
+      const list = document.getElementById('uaeTracksList');
+      if (!list || list.childElementCount > 0) return; // same 17 tracks always — populate once
+      list.innerHTML = UAE_TRACKS.map(t => `<option value="${escapeHtml(t.name)}"></option>`).join('');
+    }
+
+    // Picking a known track from the datalist auto-fills its location —
+    // typing a track name that isn't in the list just leaves location alone.
+    function onRideTrackChange() {
+      const match = UAE_TRACKS.find(tr => tr.name === document.getElementById('rideTrack').value);
+      if (match) document.getElementById('rideLocation').value = match.location;
+    }
+
+    function fmtRideDate(d, time) {
+      if (!d) return '';
+      const daysAr = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+      const monthsAr = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+      const daysEn = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const monthsEn = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const dt = new Date(d + 'T' + (time || '00:00'));
+      if (isNaN(dt.getTime())) return d + ' ' + (time || '');
+      const days = currentLanguage === 'ar' ? daysAr : daysEn;
+      const months = currentLanguage === 'ar' ? monthsAr : monthsEn;
+      return `${days[dt.getDay()]} ${dt.getDate()} ${months[dt.getMonth()]} • ${time || ''}`;
+    }
+
+    // Adds every derived/computed field a card or the detail modal needs —
+    // translated labels, participant counts, and which action the current
+    // viewer should see (organizer / joined / pending / can-join / full) —
+    // without mutating the underlying ride record.
+    function enrichRide(ride) {
+      const bikeTypeLabels = { road: t('ridesBikeTypeRoad', 'Road (Road)'), mtb: t('ridesBikeTypeMtb', 'Mountain (MTB)'), any: t('ridesBikeTypeAny', 'Any type') };
+      const genderLabels = { mixed: t('ridesGenderMixed', 'Mixed'), male: t('ridesGenderMale', 'Men only'), female: t('ridesGenderFemale', 'Women only') };
+      const difficultyLabels = { easy: t('ridesDifficultyEasy', 'Easy'), medium: t('ridesDifficultyMedium', 'Medium'), hard: t('ridesDifficultyHard', 'Hard') };
+      const levelLabels = { beginner: t('ridesLevelBeginner', 'Beginner'), intermediate: t('ridesLevelIntermediate', 'Intermediate'), advanced: t('ridesLevelAdvanced', 'Advanced') };
+
+      const participants = ride.participants || [];
+      const pendingRequests = ride.pendingRequests || [];
+      const spots = participants.length;
+      const full = spots >= ride.maxParticipants;
+      const myId = currentUser ? currentUser.id : null;
+      const isOrganizer = !!(currentUser && ride.organizerId === myId);
+      const joinedSelf = !isOrganizer && participants.some(p => p.userId === myId);
+      const pendingSelf = !isOrganizer && pendingRequests.some(p => p.userId === myId);
+
+      return {
+        ...ride,
+        participants,
+        pendingRequests,
+        dateLabel: fmtRideDate(ride.date, ride.time),
+        bikeTypeLabel: bikeTypeLabels[ride.bikeType] || ride.bikeType,
+        genderLabelText: genderLabels[ride.gender] || ride.gender,
+        difficultyLabel: difficultyLabels[ride.difficulty] || ride.difficulty,
+        levelLabel: levelLabels[ride.level] || ride.level,
+        spots,
+        isFull: full,
+        isOrganizer,
+        joinedSelf,
+        pendingSelf,
+        canJoin: !isOrganizer && !joinedSelf && !pendingSelf && !full,
+        fullBlocked: !isOrganizer && !joinedSelf && !pendingSelf && full,
+      };
+    }
+
+    function switchRideTab(tabName) {
+      activeRideTab = tabName;
+      document.getElementById('rideTabBrowse').classList.toggle('active', tabName === 'browse');
+      document.getElementById('rideTabCreate').classList.toggle('active', tabName === 'create');
+      document.getElementById('rideTabMine').classList.toggle('active', tabName === 'mine');
+      document.getElementById('rideBrowseSection').classList.toggle('is-hidden', tabName !== 'browse');
+      document.getElementById('rideCreateSection').classList.toggle('is-hidden', tabName !== 'create');
+      document.getElementById('rideMineSection').classList.toggle('is-hidden', tabName !== 'mine');
+      if (tabName === 'browse') renderRideBrowse();
+      else if (tabName === 'mine') renderRideMine();
+    }
+
+    function renderRidesPage() {
+      const mineCount = currentUser
+        ? rides.filter(r => r.organizerId === currentUser.id || (r.participants || []).some(p => p.userId === currentUser.id)).length
+        : 0;
+      document.getElementById('rideMineCount').textContent = mineCount;
+
+      if (activeRideTab === 'browse') renderRideBrowse();
+      else if (activeRideTab === 'mine') renderRideMine();
+    }
+
+    function renderRideBrowse() {
+      const errContainer = document.getElementById('ridesLoadErrorContainer');
+      const container = document.getElementById('ridesBrowseContainer');
+
+      if (ridesLoadError) {
+        errContainer.innerHTML = `<div class="empty-state">
+          <p>${t('ridesLoadErrorText', "Couldn't load rides from the server. Is it running?")}</p>
+          <button class="btn empty-state-add-btn" onclick="retryLoadRides()">${t('retryButton', 'Retry')}</button>
+        </div>`;
+        container.innerHTML = '';
+        return;
+      }
+      errContainer.innerHTML = '';
+
+      const enriched = [...rides].map(enrichRide).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+      if (enriched.length === 0) {
+        container.innerHTML = `<div class="empty-state">
+          <p>${t('ridesNoBrowseRides', 'No rides available right now.')}</p>
+          <button class="btn empty-state-add-btn" onclick="switchRideTab('create')">${t('ridesCreateFirstButton', 'Create the first ride')}</button>
+        </div>`;
+        return;
+      }
+      container.innerHTML = `<div class="products-grid">${enriched.map(createRideCard).join('')}</div>`;
+    }
+
+    function renderRideMine() {
+      const container = document.getElementById('ridesMineContainer');
+      if (ridesLoadError) { container.innerHTML = ''; return; } // the Browse tab's error state already covers this
+
+      const mine = [...rides].map(enrichRide).filter(r => r.isOrganizer || r.joinedSelf || r.pendingSelf);
+      if (mine.length === 0) {
+        container.innerHTML = `<div class="empty-state">
+          <p>${t('ridesNoMineRides', "You haven't created or joined any ride yet.")}</p>
+          <div style="display:flex;gap:12px;justify-content:center;">
+            <button class="btn empty-state-add-btn" onclick="switchRideTab('create')">${escapeHtml(t('ridesCreateTab', '+ Create a ride'))}</button>
+            <button class="btn btn-muted empty-state-add-btn" onclick="switchRideTab('browse')">${escapeHtml(t('ridesBrowseTab', 'Available rides'))}</button>
+          </div>
+        </div>`;
+        return;
+      }
+      container.innerHTML = `<div class="products-grid">${mine.map(createMineRideCard).join('')}</div>`;
+    }
+
+    function createRideCard(ride) {
+      const statusClass = ride.isFull ? 'ride-status-full' : 'ride-status-open';
+      const statusText = ride.isFull ? t('ridesStatusFull', 'Full') : t('ridesStatusOpen', 'Spots open');
+      return `
+        <div class="product-card">
+          <div class="ride-card-body">
+            <div class="ride-card-top-row">
+              <span class="ride-badge">${escapeHtml(ride.bikeTypeLabel)}</span>
+              <span class="ride-status-badge ${statusClass}">${escapeHtml(statusText)}</span>
+            </div>
+            <div class="ride-card-title">${escapeHtml(ride.title)}</div>
+            <div class="ride-card-meta">
+              📍 ${escapeHtml(ride.track)} — ${escapeHtml(ride.location)}<br />
+              🕒 ${escapeHtml(ride.dateLabel)}<br />
+              📏 ${escapeHtml(ride.distance)} ${t('ridesKm', 'km')} &nbsp;•&nbsp; ⚡ ${escapeHtml(ride.speed || '—')}
+            </div>
+            <div class="ride-card-tags">
+              <span class="ride-card-tag">👤 ${escapeHtml(ride.genderLabelText)}</span>
+              <span class="ride-card-tag">🎯 ${escapeHtml(t('ridesLevelPrefix', 'Level'))} ${escapeHtml(ride.levelLabel)}</span>
+              <span class="ride-card-tag">↗️ ${escapeHtml(t('ridesDifficultyPrefix', 'Difficulty'))} ${escapeHtml(ride.difficultyLabel)}</span>
+            </div>
+            <div class="ride-card-footer">
+              <span>${escapeHtml(t('ridesLedByPrefix', 'Led by'))} ${escapeHtml(ride.organizerName)}</span>
+              <span class="ride-card-spots">${ride.spots} / ${ride.maxParticipants} ${escapeHtml(t('ridesParticipantsSuffix', 'participants'))}</span>
+            </div>
+            <button class="btn" onclick="openRideModal(${ride.id})">${escapeHtml(t('ridesViewDetails', 'View details'))}</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function createMineRideCard(ride) {
+      const roleLabel = ride.isOrganizer ? t('ridesRoleOrganizer', 'Organizer') : t('ridesRoleParticipant', 'Participant');
+      const roleClass = ride.isOrganizer ? 'ride-badge-organizer' : '';
+      const pendingCount = (ride.pendingRequests || []).length;
+      const pendingBadge = ride.isOrganizer && pendingCount > 0
+        ? `<span class="ride-status-badge ride-status-pending">🔔 ${pendingCount} ${escapeHtml(t('ridesRequestsSuffix', 'requests'))}</span>`
+        : '';
+      return `
+        <div class="product-card" style="cursor:pointer;" onclick="openRideModal(${ride.id})">
+          <div class="ride-card-body">
+            <div class="ride-card-top-row">
+              <span class="ride-badge ${roleClass}">${escapeHtml(roleLabel)}</span>
+              ${pendingBadge}
+            </div>
+            <div class="ride-card-title">${escapeHtml(ride.title)}</div>
+            <div class="ride-card-meta">
+              📍 ${escapeHtml(ride.track)}<br />
+              🕒 ${escapeHtml(ride.dateLabel)}
+            </div>
+            <div class="ride-card-footer">
+              <span class="ride-card-spots">${ride.spots} / ${ride.maxParticipants} ${escapeHtml(t('ridesParticipantsSuffix', 'participants'))}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function submitCreateRide() {
+      if (!currentUser) return;
+      const title = document.getElementById('rideTitle').value.trim();
+      const track = document.getElementById('rideTrack').value.trim();
+      const date = document.getElementById('rideDate').value;
+      const time = document.getElementById('rideTime').value;
+      if (!title || !track || !date || !time) {
+        alert(t('ridesFillRequiredAlert', 'Please fill in the ride title, track, date, and time'));
+        return;
+      }
+
+      const newRide = {
+        title,
+        track,
+        location: document.getElementById('rideLocation').value.trim(),
+        startPoint: document.getElementById('rideStartPoint').value.trim(),
+        date,
+        time,
+        distance: Number(document.getElementById('rideDistance').value) || 0,
+        difficulty: document.getElementById('rideDifficulty').value,
+        speed: document.getElementById('rideSpeed').value.trim(),
+        bikeType: document.getElementById('rideBikeType').value,
+        gender: document.getElementById('rideGender').value,
+        level: document.getElementById('rideLevel').value,
+        maxParticipants: Number(document.getElementById('rideMaxParticipants').value) || 8,
+        notes: document.getElementById('rideNotes').value.trim(),
+        organizerId: currentUser.id,
+        organizerName: currentUser.name,
+        participants: [{ userId: currentUser.id, name: currentUser.name }],
+        pendingRequests: [],
+      };
+
+      const submitBtn = document.getElementById('rideCreateSubmitBtn');
+      const originalLabel = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.textContent = t('publishingButton', '⏳ جاري النشر...');
+
+      try {
+        const res = await fetch('/api/rides', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newRide),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        await loadRides();
+      } catch (e) {
+        console.error('Error creating ride:', e);
+        alert(currentLanguage === 'ar' ? 'تعذّر إنشاء الطلعة.' : 'Could not create the ride.');
+        return;
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalLabel;
+      }
+
+      clearRideForm();
+      switchRideTab('mine');
+    }
+
+    function clearRideForm() {
+      document.getElementById('rideTitle').value = '';
+      document.getElementById('rideTrack').value = '';
+      document.getElementById('rideLocation').value = '';
+      document.getElementById('rideStartPoint').value = '';
+      document.getElementById('rideDate').value = '';
+      document.getElementById('rideTime').value = '';
+      document.getElementById('rideDistance').value = '';
+      document.getElementById('rideDifficulty').value = 'medium';
+      document.getElementById('rideSpeed').value = '';
+      document.getElementById('rideBikeType').value = 'road';
+      document.getElementById('rideGender').value = 'mixed';
+      document.getElementById('rideLevel').value = 'intermediate';
+      document.getElementById('rideMaxParticipants').value = '8';
+      document.getElementById('rideNotes').value = '';
+    }
+
+    function openRideModal(id) {
+      selectedRideId = id;
+      renderRideModalContent();
+      document.getElementById('rideModal').classList.add('open');
+    }
+
+    function closeRideModal() {
+      document.getElementById('rideModal').classList.remove('open');
+      selectedRideId = null;
+    }
+
+    document.getElementById('rideModal').addEventListener('click', function (e) {
+      if (e.target === this) closeRideModal();
+    });
+
+    function renderRideModalContent() {
+      const raw = rides.find(r => r.id === selectedRideId);
+      if (!raw) { closeRideModal(); return; }
+      const ride = enrichRide(raw);
+
+      document.getElementById('rideModalBikeType').textContent = ride.bikeTypeLabel;
+      document.getElementById('rideModalTitle').textContent = ride.title;
+      document.getElementById('rideModalOrganizer').textContent = `${t('ridesLedByPrefix', 'Led by')} ${ride.organizerName}`;
+
+      document.getElementById('rideModalSpecs').innerHTML = `
+        <div class="modal-spec"><div class="modal-spec-label">${escapeHtml(t('ridesTrackLabel', 'Track'))}</div><div class="modal-spec-value">${escapeHtml(ride.track)}</div></div>
+        <div class="modal-spec"><div class="modal-spec-label">${escapeHtml(t('ridesLocationLabel', 'Location'))}</div><div class="modal-spec-value">${escapeHtml(ride.location || '—')}</div></div>
+        <div class="modal-spec"><div class="modal-spec-label">${escapeHtml(t('ridesStartPointLabel', 'Start point'))}</div><div class="modal-spec-value">${escapeHtml(ride.startPoint || '—')}</div></div>
+        <div class="modal-spec"><div class="modal-spec-label">${escapeHtml(t('ridesDateTimeLabel', 'Date & time'))}</div><div class="modal-spec-value">${escapeHtml(ride.dateLabel)}</div></div>
+        <div class="modal-spec"><div class="modal-spec-label">${escapeHtml(t('ridesDistanceDifficultyLabel', 'Distance & difficulty'))}</div><div class="modal-spec-value">${escapeHtml(ride.distance)} ${escapeHtml(t('ridesKm', 'km'))} • ${escapeHtml(ride.difficultyLabel)}</div></div>
+        <div class="modal-spec"><div class="modal-spec-label">${escapeHtml(t('ridesSpeedLabel', 'Expected speed'))}</div><div class="modal-spec-value">${escapeHtml(ride.speed || '—')}</div></div>
+        <div class="modal-spec"><div class="modal-spec-label">${escapeHtml(t('ridesGenderLabel', 'Allowed gender'))}</div><div class="modal-spec-value">${escapeHtml(ride.genderLabelText)}</div></div>
+        <div class="modal-spec"><div class="modal-spec-label">${escapeHtml(t('ridesLevelLabel', 'Required level'))}</div><div class="modal-spec-value">${escapeHtml(ride.levelLabel)}</div></div>
+      `;
+
+      const notesWrap = document.getElementById('rideModalNotesWrap');
+      const hasNotes = !!(ride.notes && ride.notes.trim());
+      notesWrap.classList.toggle('is-hidden', !hasNotes);
+      if (hasNotes) document.getElementById('rideModalNotes').textContent = '📝 ' + ride.notes;
+
+      document.getElementById('rideModalParticipantsHeading').textContent =
+        `${t('ridesParticipantsHeading', 'Participants')} (${ride.spots} / ${ride.maxParticipants})`;
+      document.getElementById('rideModalParticipantsChips').innerHTML = ride.participants
+        .map(p => `<span class="ride-participant-chip">${escapeHtml(p.name)}</span>`).join('');
+
+      const organizerSection = document.getElementById('rideModalOrganizerSection');
+      organizerSection.classList.toggle('is-hidden', !ride.isOrganizer);
+      if (ride.isOrganizer) {
+        const pending = ride.pendingRequests;
+        document.getElementById('rideModalPendingHeading').textContent =
+          `${t('ridesPendingRequestsHeading', 'Join requests')} (${pending.length})`;
+        document.getElementById('rideModalNoPending').classList.toggle('is-hidden', pending.length > 0);
+        document.getElementById('rideModalPendingList').innerHTML = pending.map(req => `
+          <div class="ride-pending-card">
+            <div>
+              <div class="ride-pending-name">${escapeHtml(req.name)}</div>
+              <div class="ride-pending-note">${escapeHtml(req.note || '')}</div>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="ride-accept-btn" onclick="acceptRideRequest(${ride.id}, ${req.id})">${escapeHtml(t('ridesAcceptButton', 'Accept'))}</button>
+              <button class="ride-reject-btn" onclick="rejectRideRequest(${ride.id}, ${req.id})">${escapeHtml(t('ridesRejectButton', 'Reject'))}</button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      document.getElementById('rideModalJoinedSection').classList.toggle('is-hidden', !ride.joinedSelf);
+      document.getElementById('rideModalPendingSelfSection').classList.toggle('is-hidden', !ride.pendingSelf);
+      document.getElementById('rideModalJoinSection').classList.toggle('is-hidden', !ride.canJoin);
+      document.getElementById('rideModalFullSection').classList.toggle('is-hidden', !ride.fullBlocked);
+      document.getElementById('rideJoinNoteInput').value = '';
+    }
+
+    // Shared by every join/leave/accept/reject/cancel action below — each one
+    // just computes the next participants/pendingRequests array and PATCHes
+    // it in, then refreshes both the modal (if still open) and the page.
+    async function patchRide(rideId, partialUpdate) {
+      try {
+        const res = await fetch(`/api/rides/${rideId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(partialUpdate),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        await loadRides();
+      } catch (e) {
+        console.error('Error updating ride:', e);
+        alert(currentLanguage === 'ar' ? 'تعذّر تحديث الطلعة.' : 'Could not update the ride.');
+        return;
+      }
+      if (selectedRideId != null && document.getElementById('rideModal').classList.contains('open')) {
+        renderRideModalContent();
+      }
+      renderRidesPage();
+    }
+
+    async function requestJoinCurrentRide() {
+      if (!selectedRideId || !currentUser) return;
+      const ride = rides.find(r => r.id === selectedRideId);
+      if (!ride) return;
+      const note = document.getElementById('rideJoinNoteInput').value.trim();
+      const newRequest = { id: Date.now(), userId: currentUser.id, name: currentUser.name, note };
+      await patchRide(selectedRideId, { pendingRequests: [...(ride.pendingRequests || []), newRequest] });
+    }
+
+    async function cancelMyRideRequest() {
+      if (!selectedRideId || !currentUser) return;
+      const ride = rides.find(r => r.id === selectedRideId);
+      if (!ride) return;
+      const pendingRequests = (ride.pendingRequests || []).filter(p => p.userId !== currentUser.id);
+      await patchRide(selectedRideId, { pendingRequests });
+    }
+
+    async function leaveCurrentRide() {
+      if (!selectedRideId || !currentUser) return;
+      const ride = rides.find(r => r.id === selectedRideId);
+      if (!ride) return;
+      const participants = (ride.participants || []).filter(p => p.userId !== currentUser.id);
+      await patchRide(selectedRideId, { participants });
+      closeRideModal();
+    }
+
+    async function acceptRideRequest(rideId, reqId) {
+      const ride = rides.find(r => r.id === rideId);
+      if (!ride) return;
+      const req = (ride.pendingRequests || []).find(p => p.id === reqId);
+      if (!req) return;
+      if ((ride.participants || []).length >= ride.maxParticipants) {
+        alert(currentLanguage === 'ar' ? 'العدد مكتمل بالفعل.' : 'This ride is already full.');
+        return;
+      }
+      const participants = [...(ride.participants || []), { userId: req.userId, name: req.name }];
+      const pendingRequests = (ride.pendingRequests || []).filter(p => p.id !== reqId);
+      await patchRide(rideId, { participants, pendingRequests });
+    }
+
+    async function rejectRideRequest(rideId, reqId) {
+      const ride = rides.find(r => r.id === rideId);
+      if (!ride) return;
+      const pendingRequests = (ride.pendingRequests || []).filter(p => p.id !== reqId);
+      await patchRide(rideId, { pendingRequests });
     }
 
     // ===== USER PROFILE =====

@@ -515,6 +515,177 @@ async function handleDeleteProduct(req, res, id) {
   res.end();
 }
 
+// ---- Rides API ----------------------------------------------------------------
+// Group bike rides: browse rides, create one, request to join, and (as the
+// organizer) accept/reject requests. Needs the same server-shared storage as
+// products — two different visitors must see and act on the same ride data
+// (an organizer accepting a request only makes sense if both people are
+// looking at the same record) — so it follows that file's exact pattern
+// rather than living in localStorage like users/messages do.
+
+const RIDES_FILE = path.join(ROOT, 'rides.json');
+const RIDE_MAX_BODY_BYTES = 200_000; // plain text/number fields only, no images
+
+// Neutral example rides for a fresh deployment — organizerId values (8000s)
+// are demo-only and never collide with a real registered user's id (assigned
+// via Date.now() at signup), so these never show as "mine" for an actual
+// visitor, same as DEMO_PRODUCTS' sellerId convention above.
+const DEMO_RIDES = [
+  {
+    id: 1,
+    title: 'طلعة صباحية - مضمار جميرا',
+    track: 'مضمار جميرا للدراجات',
+    location: 'دبي - جميرا',
+    startPoint: 'بوابة 2 - المضمار',
+    date: '2026-08-15',
+    time: '06:00',
+    distance: 25,
+    difficulty: 'medium',
+    speed: '25-28 كم/س',
+    bikeType: 'road',
+    gender: 'mixed',
+    level: 'intermediate',
+    maxParticipants: 8,
+    notes: 'الرجاء الالتزام بوقت الانطلاق وارتداء الخوذة.',
+    organizerId: 8000,
+    organizerName: 'سلطان الكعبي',
+    createdAt: '2026-08-01T10:00:00.000Z',
+    participants: [
+      { userId: 8000, name: 'سلطان الكعبي' },
+      { userId: null, name: 'محمد راشد' },
+      { userId: null, name: 'خالد العلي' },
+    ],
+    pendingRequests: [],
+  },
+  {
+    id: 2,
+    title: 'طلعة جبلية - مسار الحجر',
+    track: 'مسار الحجر الجبلي',
+    location: 'رأس الخيمة',
+    startPoint: 'مدخل المسار الرئيسي',
+    date: '2026-08-20',
+    time: '05:30',
+    distance: 40,
+    difficulty: 'hard',
+    speed: '18-22 كم/س',
+    bikeType: 'mtb',
+    gender: 'male',
+    level: 'advanced',
+    maxParticipants: 6,
+    notes: 'مسار جبلي وعر، يفضل وجود خبرة سابقة.',
+    organizerId: 8001,
+    organizerName: 'عبدالله سعيد',
+    createdAt: '2026-08-02T10:00:00.000Z',
+    participants: [
+      { userId: 8001, name: 'عبدالله سعيد' },
+    ],
+    pendingRequests: [
+      { id: 101, userId: null, name: 'ياسر فهد', note: 'دراجة MTB، مستوى متقدم، أرغب بالانضمام.' },
+      { id: 102, userId: null, name: 'نواف حمد', note: 'شاركت في طلعات جبلية سابقة.' },
+    ],
+  },
+  {
+    id: 3,
+    title: 'طلعة مسائية خفيفة - كورنيش أبوظبي',
+    track: 'كورنيش أبوظبي',
+    location: 'أبوظبي',
+    startPoint: 'قرب مرسى أبوظبي',
+    date: '2026-08-12',
+    time: '17:30',
+    distance: 15,
+    difficulty: 'easy',
+    speed: '18-20 كم/س',
+    bikeType: 'any',
+    gender: 'mixed',
+    level: 'beginner',
+    maxParticipants: 12,
+    notes: '',
+    organizerId: 8002,
+    organizerName: 'مريم النعيمي',
+    createdAt: '2026-08-03T10:00:00.000Z',
+    participants: [
+      { userId: 8002, name: 'مريم النعيمي' },
+      { userId: null, name: 'سارة أحمد' },
+    ],
+    pendingRequests: [],
+  },
+];
+
+function loadRidesFromDisk() {
+  if (!fs.existsSync(RIDES_FILE)) {
+    fs.writeFileSync(RIDES_FILE, JSON.stringify(DEMO_RIDES, null, 2));
+    return DEMO_RIDES;
+  }
+  try {
+    const parsed = JSON.parse(fs.readFileSync(RIDES_FILE, 'utf8'));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    console.error('Error reading rides.json, treating as empty:', e);
+    return [];
+  }
+}
+
+function saveRidesToDisk(rides) {
+  fs.writeFileSync(RIDES_FILE, JSON.stringify(rides, null, 2));
+}
+
+async function handleGetRides(req, res) {
+  sendJson(res, 200, loadRidesFromDisk());
+}
+
+async function handleCreateRide(req, res) {
+  let body;
+  try {
+    body = await readJsonBody(req, RIDE_MAX_BODY_BYTES);
+  } catch (e) {
+    sendJson(res, e.status || 400, { error: e.message });
+    return;
+  }
+  const rides = loadRidesFromDisk();
+  // Server assigns id/createdAt, same reasoning as products — never trust a
+  // client-supplied id.
+  const newRide = { ...body, id: Date.now(), createdAt: new Date().toISOString() };
+  rides.push(newRide);
+  saveRidesToDisk(rides);
+  sendJson(res, 201, newRide);
+}
+
+async function handleUpdateRide(req, res, id) {
+  let body;
+  try {
+    body = await readJsonBody(req, RIDE_MAX_BODY_BYTES);
+  } catch (e) {
+    sendJson(res, e.status || 400, { error: e.message });
+    return;
+  }
+  const rides = loadRidesFromDisk();
+  const idx = rides.findIndex((r) => String(r.id) === String(id));
+  if (idx === -1) {
+    sendJson(res, 404, { error: 'Ride not found' });
+    return;
+  }
+  // Partial merge (PATCH semantics) — the client computes the next
+  // participants/pendingRequests array (join/leave/accept/reject all just
+  // send the updated array) and this merges it in, same pattern as
+  // handleUpdateProduct.
+  rides[idx] = { ...rides[idx], ...body, id: rides[idx].id };
+  saveRidesToDisk(rides);
+  sendJson(res, 200, rides[idx]);
+}
+
+async function handleDeleteRide(req, res, id) {
+  const rides = loadRidesFromDisk();
+  const idx = rides.findIndex((r) => String(r.id) === String(id));
+  if (idx === -1) {
+    sendJson(res, 404, { error: 'Ride not found' });
+    return;
+  }
+  rides.splice(idx, 1);
+  saveRidesToDisk(rides);
+  res.writeHead(204);
+  res.end();
+}
+
 // ---- Router -----------------------------------------------------------------
 
 const server = http.createServer((req, res) => {
@@ -532,6 +703,18 @@ const server = http.createServer((req, res) => {
     if (req.method === 'POST' && !id) { handleCreateProduct(req, res); return; }
     if (req.method === 'PATCH' && id) { handleUpdateProduct(req, res, id); return; }
     if (req.method === 'DELETE' && id) { handleDeleteProduct(req, res, id); return; }
+    res.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('405 Method Not Allowed');
+    return;
+  }
+
+  const rideMatch = urlPath.match(/^\/api\/rides(?:\/([^/]+))?$/);
+  if (rideMatch) {
+    const id = rideMatch[1];
+    if (req.method === 'GET' && !id) { handleGetRides(req, res); return; }
+    if (req.method === 'POST' && !id) { handleCreateRide(req, res); return; }
+    if (req.method === 'PATCH' && id) { handleUpdateRide(req, res, id); return; }
+    if (req.method === 'DELETE' && id) { handleDeleteRide(req, res, id); return; }
     res.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('405 Method Not Allowed');
     return;
