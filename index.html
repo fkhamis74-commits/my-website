@@ -3,9 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title data-i18n="documentTitle">Pedalex | سوق الدراجات الهوائية مستعمل وجديد</title>
-  <meta name="description" content="منصة Pedalex لبيع وشراء الدراجات الهوائية ودراجات الطريق (Road Bikes). ابحث عن المقاس والميزانية المناسبة لك بسهولة." />
+  <title data-i18n="documentTitle">Pedalex | سوق الدراجات الهوائية ودراجات الطريق في الإمارات</title>
+  <meta name="description" content="منصة Pedalex لبيع وشراء الدراجات الهوائية ودراجات الطريق (Road Bikes) ومعداتها في الإمارات. ابحث عن المقاس والميزانية المناسبة لك بسهولة عبر تواصل واتساب مباشر." />
   <link rel="icon" type="image/svg+xml" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="%232563EB"/><path d="M35 25H58C67.9 25 76 33 76 43C76 53 67.9 61 58 61H47V75H35V25Z" fill="white"/><circle cx="58" cy="43" r="8" fill="%231E293B"/></svg>'>
+
+  <!-- Open Graph / WhatsApp / Facebook link preview -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://my-website-bng4.onrender.com/" />
+  <meta property="og:title" content="Pedalex 🚴‍♂️ | سوق الدراجات الهوائية ودراجات الطريق في الإمارات" />
+  <meta property="og:description" content="اعرض دراجتك للبيع أو ابحث عن دراجتك القادمة بمقاسك وميزانيتك المناسبة بكل سهولة." />
+  <meta property="og:image" content="https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=1200&q=80" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Pedalex 🚴‍♂️ | سوق الدراجات الهوائية ودراجات الطريق في الإمارات" />
+  <meta name="twitter:description" content="اعرض دراجتك للبيع أو ابحث عن دراجتك القادمة بمقاسك وميزانيتك المناسبة بكل سهولة." />
+  <meta name="twitter:image" content="https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=1200&q=80" />
   <!-- Cairo — an Arabic-optimized webfont (also covers Latin), matching the
        site's primary language. Falls back to system-ui gracefully if this
        fails to load (e.g. no internet while testing locally). -->
@@ -1811,6 +1826,109 @@
       margin-top: 40px;
       font-size: 1.1rem;
       font-weight: 500;
+    }
+
+    /* ===== Site Footer ===== */
+    /* Dark one-off (not var(--card)/var(--text)) on purpose — a deliberate
+       band distinct from the page above it, same treatment as the quick
+       size filter banner. Sits outside every .page div so it's always
+       visible regardless of which page is active. */
+    .site-footer {
+      background: #0F172A;
+      color: #94A3B8;
+      padding: 32px 24px;
+      margin-top: 40px;
+      border-top: 1px solid #1E293B;
+      font-size: 0.85rem;
+    }
+
+    .site-footer-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      text-align: center;
+    }
+
+    .site-footer-brand {
+      color: white;
+      font-weight: 800;
+      font-size: 1rem;
+    }
+
+    .site-footer-tagline {
+      color: #64748B;
+      font-size: 0.75rem;
+      margin-top: 4px;
+    }
+
+    .site-footer-links {
+      display: flex;
+      gap: 24px;
+      font-size: 0.8rem;
+    }
+
+    .site-footer-link {
+      background: none;
+      border: none;
+      color: #94A3B8;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: inherit;
+      padding: 0;
+      transition: color 0.2s;
+    }
+
+    .site-footer-link:hover {
+      color: white;
+    }
+
+    .site-footer-copyright {
+      color: #475569;
+      font-size: 0.75rem;
+    }
+
+    .legal-modal-header {
+      background: var(--accent);
+      color: white;
+      /* .modal-close sits at left:15px (even in this RTL layout) — extra
+         left padding here keeps the title from running under it. */
+      padding: 20px 24px 20px 50px;
+      font-weight: 800;
+      font-size: 1.05rem;
+    }
+
+    .legal-modal-body {
+      padding: 24px;
+      overflow-y: auto;
+      color: var(--text);
+      font-size: 0.9rem;
+      line-height: 1.8;
+    }
+
+    .legal-modal-body h4 {
+      color: var(--text);
+      font-size: 1rem;
+      margin: 20px 0 8px;
+    }
+
+    .legal-modal-body h4:first-child {
+      margin-top: 0;
+    }
+
+    .legal-modal-body p {
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .legal-modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
     }
 
     /* Empty State */
@@ -3969,6 +4087,34 @@
       </div>
     </div>
 
+    <!-- Site Footer — sibling of the .page divs (not itself a .page), so it
+         stays visible under whichever page is currently active. -->
+    <footer class="site-footer">
+      <div class="site-footer-inner">
+        <div>
+          <div class="site-footer-brand">Pedalex 🚴‍♂️</div>
+          <div class="site-footer-tagline" data-i18n="footerTagline">منصة إعلانات مبوبة مستقلة للدراجات الهوائية في الإمارات.</div>
+        </div>
+        <div class="site-footer-links">
+          <button class="site-footer-link" onclick="openLegalModal('terms')" data-i18n="footerTermsLink">الشروط والأحكام</button>
+          <button class="site-footer-link" onclick="openLegalModal('privacy')" data-i18n="footerPrivacyLink">سياسة الخصوصية</button>
+        </div>
+        <div class="site-footer-copyright" data-i18n="footerCopyright">© 2026 Pedalex. جميع الحقوق محفوظة.</div>
+      </div>
+    </footer>
+
+    <!-- Legal Modal (Terms / Privacy) -->
+    <div class="modal-overlay" id="legalModal">
+      <div class="modal-box" style="max-width: 640px;">
+        <button class="modal-close" onclick="closeLegalModal()" title="إغلاق" aria-label="إغلاق" data-i18n-title="modalCloseTitle" data-i18n-aria-label="modalCloseTitle">✕</button>
+        <div class="legal-modal-header" id="legalModalTitle"></div>
+        <div class="legal-modal-body" id="legalModalContent"></div>
+        <div class="legal-modal-footer">
+          <button class="btn btn-auto" onclick="closeLegalModal()" data-i18n="legalCloseButton">موافق وإغلاق</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Bike Detail Modal -->
     <div class="modal-overlay" id="bikeModal">
       <div class="modal-box">
@@ -4106,7 +4252,7 @@
     // ===== TRANSLATIONS =====
     const translations = {
       ar: {
-        documentTitle: 'Pedalex | سوق الدراجات الهوائية مستعمل وجديد',
+        documentTitle: 'Pedalex | سوق الدراجات الهوائية ودراجات الطريق في الإمارات',
         // Auth
         authWelcome: 'مرحباً بك',
         authSubtitle: 'اختر طريقة الدخول',
@@ -4251,6 +4397,33 @@
           seller: 'البائع',
           location: 'الموقع'
         },
+        legal: {
+          termsTitle: 'الشروط والأحكام',
+          termsBody:
+            '<h4>1. طبيعة المنصة</h4>' +
+            '<p>Pedalex سوق إعلانات مبوّبة يربط بائعين ومشترين مستقلين لبيع وشراء الدراجات ومعداتها. المنصة لا تملك أي من المنتجات المعروضة ولا تتوسط بالمدفوعات — التواصل والاتفاق على السعر والدفع يتم مباشرة بين البائع والمشتري عبر واتساب.</p>' +
+            '<h4>2. مراجعة الإعلانات</h4>' +
+            '<p>كل إعلان جديد يخضع لمراجعة فريق الإدارة قبل نشره للتأكد من مطابقته لسياسات الموقع، وقد يُرفض أو يُطلب من البائع تعديله قبل النشر.</p>' +
+            '<h4>3. إخلاء المسؤولية</h4>' +
+            '<p>المنصة غير مسؤولة عن حالة أو سلامة أو أصل ملكية أي دراجة معروضة. يتحمل المشتري مسؤولية فحص المنتج شخصيًا أو عبر فني مختص والتأكد منه قبل إتمام أي عملية شراء أو تحويل مالي.</p>' +
+            '<h4>4. التزامات البائع</h4>' +
+            '<p>يلتزم البائع بنشر معلومات وصور دقيقة وعدم عرض دراجات مسروقة أو مقلّدة أو مضلِّلة. يحق لفريق الإدارة حذف أي إعلان مخالف بدون إشعار مسبق.</p>',
+          privacyTitle: 'سياسة الخصوصية',
+          privacyBody:
+            '<h4>1. البيانات التي نجمعها</h4>' +
+            '<p>عند إنشاء حساب، نجمع الاسم والبريد الإلكتروني ورقم الهاتف. عند إضافة إعلان، نجمع تفاصيل المنتج ووصفه وصوره وموقعه (الإمارة).</p>' +
+            '<h4>2. كيف نستخدم بياناتك</h4>' +
+            '<p>يُستخدم رقم هاتفك لتفعيل زر التواصل المباشر عبر واتساب بينك وبين المشترين المهتمين. تُستخدم بيانات حسابك لتسجيل الدخول وعرض إعلاناتك ورسائلك.</p>' +
+            '<h4>3. مشاركة البيانات</h4>' +
+            '<p>لا نبيع بياناتك ولا نشاركها مع أي جهة خارجية لأغراض تسويقية. بياناتك تبقى ضمن نطاق الموقع فقط.</p>' +
+            '<h4>4. المساعد الذكي</h4>' +
+            '<p>عند استخدامك ميزة الدردشة الذكية، تُرسل رسائلك إلى مزوّد خدمة الذكاء الاصطناعي (Anthropic) لغرض توليد الرد فقط.</p>',
+        },
+        footerTagline: 'منصة إعلانات مبوبة مستقلة للدراجات الهوائية في الإمارات.',
+        footerTermsLink: 'الشروط والأحكام',
+        footerPrivacyLink: 'سياسة الخصوصية',
+        footerCopyright: '© 2026 Pedalex. جميع الحقوق محفوظة.',
+        legalCloseButton: 'موافق وإغلاق',
         sortNewestOption: 'الأحدث',
         sortPriceOption: 'السعر',
         sortNameOption: 'الاسم',
@@ -4532,7 +4705,7 @@
         areYouSure: 'هل أنت متأكد؟',
       },
       en: {
-        documentTitle: 'Pedalex | New & Used Bike Marketplace',
+        documentTitle: 'Pedalex | Bike & Road Bike Marketplace in the UAE',
         // Auth
         authWelcome: 'Welcome',
         authSubtitle: 'Choose how you want to sign in',
@@ -4677,6 +4850,33 @@
           seller: 'Seller',
           location: 'Location'
         },
+        legal: {
+          termsTitle: 'Terms & Conditions',
+          termsBody:
+            '<h4>1. What this platform is</h4>' +
+            '<p>Pedalex is a classifieds marketplace connecting independent buyers and sellers of bikes and cycling gear. The platform does not own any listed item and does not process payments — contact, price agreement, and payment happen directly between buyer and seller over WhatsApp.</p>' +
+            '<h4>2. Listing review</h4>' +
+            '<p>Every new listing is reviewed by our admin team before it goes live, to confirm it follows site policy. A listing may be rejected or sent back to the seller for changes.</p>' +
+            '<h4>3. Disclaimer</h4>' +
+            '<p>The platform is not responsible for the condition, safety, or ownership history of any listed bike. Buyers are responsible for inspecting an item themselves, or through a qualified mechanic, before completing any purchase or payment.</p>' +
+            '<h4>4. Seller obligations</h4>' +
+            '<p>Sellers must post accurate information and real photos, and must not list stolen, counterfeit, or misleading items. Our admin team may remove any listing that violates this without prior notice.</p>',
+          privacyTitle: 'Privacy Policy',
+          privacyBody:
+            '<h4>1. What we collect</h4>' +
+            '<p>When you create an account, we collect your name, email, and phone number. When you post a listing, we collect the item\'s details, description, photos, and location (Emirate).</p>' +
+            '<h4>2. How we use your data</h4>' +
+            '<p>Your phone number powers the direct WhatsApp contact button between you and interested buyers. Your account data is used to sign you in and show your own listings and messages.</p>' +
+            '<h4>3. Data sharing</h4>' +
+            '<p>We do not sell your data or share it with any third party for marketing purposes. Your data stays within the site.</p>' +
+            '<h4>4. The AI assistant</h4>' +
+            '<p>When you use the chat assistant, your messages are sent to our AI provider (Anthropic) solely to generate a reply.</p>',
+        },
+        footerTagline: 'An independent classifieds platform for bikes in the UAE.',
+        footerTermsLink: 'Terms & Conditions',
+        footerPrivacyLink: 'Privacy Policy',
+        footerCopyright: '© 2026 Pedalex. All rights reserved.',
+        legalCloseButton: 'Agree & Close',
         sortNewestOption: 'Newest',
         sortPriceOption: 'Price',
         sortNameOption: 'Name',
@@ -5562,6 +5762,28 @@
       if (e.target === this) closeBikeModal();
     });
 
+    // ===== FOOTER / LEGAL MODAL =====
+    // Content lives in translations[lang].legal (see the ar/en blocks) so it
+    // stays in sync with the site's own language toggle — read fresh on
+    // every open rather than baked into the static HTML, the same reason
+    // dynamic content elsewhere goes through t()/innerHTML instead of
+    // data-i18n. The body is our own authored HTML, not user input, so
+    // innerHTML here doesn't need escapeHtml.
+    function openLegalModal(docType) {
+      const doc = translations[currentLanguage].legal;
+      document.getElementById('legalModalTitle').textContent = docType === 'privacy' ? doc.privacyTitle : doc.termsTitle;
+      document.getElementById('legalModalContent').innerHTML = docType === 'privacy' ? doc.privacyBody : doc.termsBody;
+      document.getElementById('legalModal').classList.add('open');
+    }
+
+    function closeLegalModal() {
+      document.getElementById('legalModal').classList.remove('open');
+    }
+
+    document.getElementById('legalModal').addEventListener('click', function (e) {
+      if (e.target === this) closeLegalModal();
+    });
+
     // Escape closes whichever overlay is currently open — checked in
     // priority order so one press only closes the topmost one.
     document.addEventListener('keydown', function(e) {
@@ -5570,6 +5792,8 @@
         closeBikeModal();
       } else if (document.getElementById('rideModal').classList.contains('open')) {
         closeRideModal();
+      } else if (document.getElementById('legalModal').classList.contains('open')) {
+        closeLegalModal();
       } else if (document.getElementById('rejectModal').classList.contains('open')) {
         closeRejectModal();
       } else if (chatOpen) {
