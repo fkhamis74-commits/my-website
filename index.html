@@ -1508,6 +1508,79 @@
       font-weight: 500;
     }
 
+    /* ===== Quick Size Filter (Inventory page) ===== */
+    /* Dark card is a deliberate one-off (not var(--card)/var(--text)) —
+       it's meant to stand out as a distinct "tool" banner above the filter
+       bar, same intent as the reference design's slate-900 block. */
+    .size-quick-filter {
+      background: #0F172A;
+      border-radius: 24px;
+      padding: 28px 32px;
+      color: white;
+      margin-bottom: 28px;
+    }
+
+    .size-quick-filter-chip {
+      display: inline-block;
+      background: rgba(37, 99, 235, 0.2);
+      color: #93C5FD;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 5px 14px;
+      border-radius: 50px;
+      border: 1px solid rgba(37, 99, 235, 0.4);
+    }
+
+    .size-quick-filter-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin: 12px 0 4px;
+    }
+
+    .size-quick-filter-desc {
+      color: #CBD5E1;
+      font-size: 0.85rem;
+      margin: 0;
+    }
+
+    .size-quick-filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .size-quick-filter-row input {
+      flex: 1;
+      min-width: 200px;
+      background: #1E293B;
+      border: 1px solid #334155;
+      color: white;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 0.9rem;
+      font-family: inherit;
+    }
+
+    .size-quick-filter-row input::placeholder {
+      color: #94A3B8;
+    }
+
+    .size-quick-filter-badge {
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: rgba(37, 99, 235, 0.15);
+      border: 1px solid rgba(37, 99, 235, 0.35);
+      border-radius: 12px;
+      font-size: 0.8rem;
+      color: #BFDBFE;
+    }
+
+    .size-quick-filter-badge strong {
+      color: white;
+      font-size: 0.95rem;
+    }
+
     /* ===== Filter Bar ===== */
     .filter-bar {
       display: grid;
@@ -3235,6 +3308,22 @@
       </div>
 
       <div class="container">
+        <!-- Quick size filter -->
+        <div class="size-quick-filter">
+          <span class="size-quick-filter-chip" data-i18n="sizeFilterChip">📏 حاسبة المقاس الذكية</span>
+          <h2 class="size-quick-filter-title" data-i18n="sizeFilterTitle">اعثر على الدراجة المناسبة لطولك فوراً</h2>
+          <p class="size-quick-filter-desc" data-i18n="sizeFilterDesc">أدخل طولك بالسنتيمتر لنحدد لك المقاس الأنسب ونفلتر الإعلانات لك تلقائياً.</p>
+          <div class="size-quick-filter-row">
+            <input type="number" id="quickHeightInput" placeholder="أدخل طولك (مثال: 178)" data-i18n-placeholder="sizeFilterPlaceholder" />
+            <button class="btn btn-auto" onclick="applyQuickSizeFilter()" data-i18n="sizeFilterApplyButton">احسب واعرض المتوفر</button>
+            <button class="btn btn-auto btn-muted is-hidden" id="quickSizeResetBtn" onclick="resetQuickSizeFilter()" data-i18n="sizeFilterResetButton">إلغاء الفلتر</button>
+          </div>
+          <div class="size-quick-filter-badge is-hidden" id="quickSizeResultBadge">
+            <span data-i18n="sizeFilterResultPrefix">💡 المقاس المقترح لطولك:</span>
+            <strong id="quickSizeResultText"></strong>
+          </div>
+        </div>
+
         <!-- Type filter tabs -->
         <div class="type-tabs">
           <button class="type-tab active" onclick="filterByType('', this)" data-i18n="allTab">🚲 الكل</button>
@@ -3467,6 +3556,18 @@
             <div class="form-group">
               <label data-i18n="productPriceLabel">السعر (د.إ)</label>
               <input type="number" id="productPrice" placeholder="مثال: 500" data-i18n-placeholder="productPricePlaceholder" />
+            </div>
+            <div class="form-group">
+              <label data-i18n="productLocationLabel">الموقع / الإمارة</label>
+              <select id="productLocation">
+                <option value="دبي" data-i18n="locationDubai">دبي</option>
+                <option value="أبوظبي" data-i18n="locationAbuDhabi">أبوظبي</option>
+                <option value="الشارقة" data-i18n="locationSharjah">الشارقة</option>
+                <option value="عجمان" data-i18n="locationAjman">عجمان</option>
+                <option value="رأس الخيمة" data-i18n="locationRasAlKhaimah">رأس الخيمة</option>
+                <option value="الفجيرة" data-i18n="locationFujairah">الفجيرة</option>
+                <option value="أم القيوين" data-i18n="locationUmmAlQuwain">أم القيوين</option>
+              </select>
             </div>
             <div id="accessoryFieldContainer" class="form-group is-hidden">
               <label data-i18n="accessoryTypeLabel">نوع الملحق</label>
@@ -3984,9 +4085,8 @@
         </div>
         <div class="chat-panel-messages" id="chatMessages"></div>
         <div class="chat-quick-prompts">
-          <button class="chat-quick-prompt-btn" data-i18n="chatQuickPromptSize" onclick="sendQuickPrompt('chatQuickPromptSize', 'Calculate my size')">📏 احسب مقاسي المناسب</button>
-          <button class="chat-quick-prompt-btn" data-i18n="chatQuickPromptBudget" onclick="sendQuickPrompt('chatQuickPromptBudget', 'Bikes under 10,000 AED')">🏷️ دراجات أقل من 10,000 درهم</button>
-          <button class="chat-quick-prompt-btn" data-i18n="chatQuickPromptMaterial" onclick="sendQuickPrompt('chatQuickPromptMaterial', 'Carbon vs Aluminum frames')">🚴 الفرق بين الكربون والألمنيوم</button>
+          <button class="chat-quick-prompt-btn" data-i18n="chatQuickPromptSize" onclick="sendQuickPrompt('chatQuickPromptSize', 'I am 179 cm and my budget is 10,000 AED')">📏 طولي 179 سم وميزانيتي 10,000 درهم</button>
+          <button class="chat-quick-prompt-btn" data-i18n="chatQuickPromptHowSize" onclick="sendQuickPrompt('chatQuickPromptHowSize', 'How do I know my right size?')">❓ كيف أحسب مقاسي؟</button>
         </div>
         <div class="chat-panel-input">
           <input type="text" id="chatInput" placeholder="اكتب سؤالك..." data-i18n-placeholder="chatInputPlaceholder" onkeydown="handleChatInputKeydown(event)" />
@@ -4103,6 +4203,15 @@
         // Inventory
         inventoryTitle: 'المنتجات المتاحة',
         inventorySubtitle: 'كل منتج تم فحصه من مستخدمين موثوقين — جاهز للشراء',
+        sizeFilterChip: '📏 حاسبة المقاس الذكية',
+        sizeFilterTitle: 'اعثر على الدراجة المناسبة لطولك فوراً',
+        sizeFilterDesc: 'أدخل طولك بالسنتيمتر لنحدد لك المقاس الأنسب ونفلتر الإعلانات لك تلقائياً.',
+        sizeFilterPlaceholder: 'أدخل طولك (مثال: 178)',
+        sizeFilterApplyButton: 'احسب واعرض المتوفر',
+        sizeFilterResetButton: 'إلغاء الفلتر',
+        sizeFilterResultPrefix: '💡 المقاس المقترح لطولك:',
+        sizeFilterInvalidHeightAlert: 'يرجى إدخال طول صحيح بالسنتيمتر (بين 100 و230)',
+        noProductsForSize: 'لا توجد دراجات مطابقة لمقاسك حالياً. جرّب تصفح مقاسات أخرى.',
         searchPlaceholder: 'ابحث عن منتج...',
         searchLabel: 'بحث:',
         categoryFilterLabel: 'الفئة',
@@ -4183,6 +4292,14 @@
         conditionAcceptable: 'مقبولة',
         productPriceLabel: 'السعر (د.إ)',
         productPricePlaceholder: 'مثال: 500',
+        productLocationLabel: 'الموقع / الإمارة',
+        locationDubai: 'دبي',
+        locationAbuDhabi: 'أبوظبي',
+        locationSharjah: 'الشارقة',
+        locationAjman: 'عجمان',
+        locationRasAlKhaimah: 'رأس الخيمة',
+        locationFujairah: 'الفجيرة',
+        locationUmmAlQuwain: 'أم القيوين',
         accessoryTypeLabel: 'نوع الملحق',
         accessoryHelmet: 'خوذة',
         accessoryTires: 'إطارات',
@@ -4305,9 +4422,8 @@
         chatSendButton: 'إرسال',
         chatErrorMessage: 'تعذّر الوصول إلى المساعد الآن. حاول مرة أخرى.',
         chatEmptyInputAlert: 'اكتب رسالة أولاً',
-        chatQuickPromptSize: '📏 احسب مقاسي المناسب',
-        chatQuickPromptBudget: '🏷️ دراجات أقل من 10,000 درهم',
-        chatQuickPromptMaterial: '🚴 الفرق بين الكربون والألمنيوم',
+        chatQuickPromptSize: '📏 طولي 179 سم وميزانيتي 10,000 درهم',
+        chatQuickPromptHowSize: '❓ كيف أحسب مقاسي؟',
         chatCloseTitle: 'إغلاق الدردشة',
         modalCloseTitle: 'إغلاق',
         mobileMenuTitle: 'القائمة',
@@ -4513,6 +4629,15 @@
         // Inventory
         inventoryTitle: 'Available Products',
         inventorySubtitle: 'Trusted listings from real riders, ready for your next ride',
+        sizeFilterChip: '📏 Smart Size Calculator',
+        sizeFilterTitle: 'Find the right bike for your height instantly',
+        sizeFilterDesc: "Enter your height in cm and we'll work out your size and filter listings for you.",
+        sizeFilterPlaceholder: 'Enter your height (e.g. 178)',
+        sizeFilterApplyButton: 'Calculate & show matches',
+        sizeFilterResetButton: 'Clear filter',
+        sizeFilterResultPrefix: '💡 Recommended size for your height:',
+        sizeFilterInvalidHeightAlert: 'Please enter a valid height in cm (between 100 and 230)',
+        noProductsForSize: 'No bikes matching your size right now. Try browsing other sizes.',
         searchPlaceholder: 'Search for a product...',
         searchLabel: 'Search:',
         categoryFilterLabel: 'Category',
@@ -4593,6 +4718,14 @@
         conditionAcceptable: 'Acceptable',
         productPriceLabel: 'Price (AED)',
         productPricePlaceholder: 'Example: 500',
+        productLocationLabel: 'Location / Emirate',
+        locationDubai: 'Dubai',
+        locationAbuDhabi: 'Abu Dhabi',
+        locationSharjah: 'Sharjah',
+        locationAjman: 'Ajman',
+        locationRasAlKhaimah: 'Ras Al Khaimah',
+        locationFujairah: 'Fujairah',
+        locationUmmAlQuwain: 'Umm Al Quwain',
         accessoryTypeLabel: 'Accessory Type',
         accessoryHelmet: 'Helmet',
         accessoryTires: 'Tires',
@@ -4715,9 +4848,8 @@
         chatSendButton: 'Send',
         chatErrorMessage: "Couldn't reach the assistant right now. Please try again.",
         chatEmptyInputAlert: 'Type a message first',
-        chatQuickPromptSize: '📏 Calculate my size',
-        chatQuickPromptBudget: '🏷️ Bikes under 10,000 AED',
-        chatQuickPromptMaterial: '🚴 Carbon vs Aluminum frames',
+        chatQuickPromptSize: '📏 I am 179 cm, budget 10,000 AED',
+        chatQuickPromptHowSize: '❓ How do I know my size?',
         chatCloseTitle: 'Close chat',
         modalCloseTitle: 'Close',
         mobileMenuTitle: 'Menu',
@@ -4873,6 +5005,11 @@
     let searchQuery = '';
     let currentSort = 'newest';
     let currentModalProductId = null;
+    // Letter (S/M/L/...) from the inventory page's quick height calculator,
+    // or null when inactive — see applyQuickSizeFilter(). Same breakpoints
+    // as the standalone Size Guide's calculateSize(), so the two never
+    // disagree about what a given height maps to.
+    let quickSizeFilter = null;
 
     // Rides share the exact same server-backed pattern as products (server.js
     // /api/rides, backed by rides.json) — two different visitors need to see
@@ -5668,6 +5805,7 @@
       const notes = document.getElementById('productNotes').value;
       const image = document.getElementById('imagePreview').querySelector('img')?.src || '';
       const accessoryType = document.getElementById('accessoryType').value;
+      const location = document.getElementById('productLocation').value;
 
       if (!name || !price) {
         alert(t('requiredFieldsAlert', 'Please fill required fields'));
@@ -5680,6 +5818,13 @@
       const colorEn = autoTranslateTextByGlossary(color, 'en');
       const modelEn = autoTranslateTextByGlossary(model, 'en');
       const sellerNameEn = autoTranslateTextByGlossary(currentUser.name, 'en');
+      // A fixed lookup (not the glossary translator) since this is a closed
+      // set of 7 emirate names, not free text.
+      const UAE_EMIRATES_EN = {
+        'دبي': 'Dubai', 'أبوظبي': 'Abu Dhabi', 'الشارقة': 'Sharjah', 'عجمان': 'Ajman',
+        'رأس الخيمة': 'Ras Al Khaimah', 'الفجيرة': 'Fujairah', 'أم القيوين': 'Umm Al Quwain',
+      };
+      const locationEn = UAE_EMIRATES_EN[location] || location;
 
       // id/createdAt are assigned server-side (POST /api/products) so two
       // concurrent submissions can never collide on a client-generated id.
@@ -5698,6 +5843,8 @@
         notes,
         notesEn,
         image,
+        location,
+        locationEn,
         accessoryType: type === 'accessory' ? accessoryType : null,
         sellerId: currentUser.id,
         sellerName: currentUser.name,
@@ -5823,6 +5970,15 @@
         }
       }
 
+      // Quick height-based size filter (Inventory page banner) — matches the
+      // computed size letter as a whole word against the free-text size
+      // field (e.g. "54 cm (M)", bare "L"), tolerant of the inconsistent
+      // formats real listings can have across bikes/accessories.
+      if (quickSizeFilter) {
+        const sizeRe = new RegExp(`\\b${quickSizeFilter}\\b`, 'i');
+        filtered = filtered.filter(p => sizeRe.test(String(p.size || '')));
+      }
+
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         filtered = filtered.filter(p =>
@@ -5847,8 +6003,11 @@
       }
 
       if (filtered.length === 0) {
+        const emptyMessage = quickSizeFilter
+          ? t('noProductsForSize', 'No bikes matching your size right now. Try browsing other sizes.')
+          : t('noProductsAvailable', 'No products available');
         html = `<div class="empty-state">
-          <p>${t('noProductsAvailable', 'No products available')}</p>
+          <p>${escapeHtml(emptyMessage)}</p>
         </div>`;
       } else {
         if (currentView === 'grid') {
@@ -5953,6 +6112,38 @@
           <button class="action-btn contact-btn" onclick="startConversation(${product.id})">${t('contactShortLabel', 'Contact')}</button>
         </div>
       </div>`;
+    }
+
+    // Same height breakpoints as the standalone Size Guide's calculateSize()
+    // — kept in sync deliberately so the two calculators never disagree.
+    function heightToSizeLetter(height) {
+      if (height < 158) return 'XS';
+      if (height < 168) return 'S';
+      if (height < 178) return 'M';
+      if (height < 188) return 'L';
+      if (height < 198) return 'XL';
+      return 'XXL';
+    }
+
+    function applyQuickSizeFilter() {
+      const height = Number(document.getElementById('quickHeightInput').value);
+      if (!height || height < 100 || height > 230) {
+        alert(t('sizeFilterInvalidHeightAlert', 'Please enter a valid height in cm (between 100 and 230)'));
+        return;
+      }
+      quickSizeFilter = heightToSizeLetter(height);
+      document.getElementById('quickSizeResultText').textContent = quickSizeFilter;
+      document.getElementById('quickSizeResultBadge').classList.remove('is-hidden');
+      document.getElementById('quickSizeResetBtn').classList.remove('is-hidden');
+      renderInventory();
+    }
+
+    function resetQuickSizeFilter() {
+      quickSizeFilter = null;
+      document.getElementById('quickHeightInput').value = '';
+      document.getElementById('quickSizeResultBadge').classList.add('is-hidden');
+      document.getElementById('quickSizeResetBtn').classList.add('is-hidden');
+      renderInventory();
     }
 
     function filterProducts() {

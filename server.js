@@ -99,24 +99,30 @@ const SYSTEM_PROMPT =
   'marketplace.\n\n' +
   'You can also act as a bike-fitting assistant. If a visitor is looking to ' +
   'buy, ask for their budget and height if they haven\'t mentioned them. Use ' +
-  'height to suggest a frame size:\n' +
-  '  165–172 cm -> size 50–52 (S)\n' +
-  '  173–180 cm -> size 54 (M)\n' +
-  '  181–188 cm -> size 56 (L)\n' +
-  '  189+ cm   -> size 58+ (XL)\n' +
-  'Once you know (or can estimate) a budget, size, or preferred brand, call ' +
-  'the search_bikes tool to check the real, currently-available inventory — ' +
-  'never invent or assume a listing exists without calling it first. If ' +
-  'nothing matches, call search_bikes again with looser criteria (e.g. drop ' +
-  'the brand, or raise maxPrice) and explain what differs about the closest ' +
-  'option you found (price, size, condition, etc.).';
+  'height to suggest a frame size — these are the site\'s canonical ' +
+  'breakpoints, the same ones the Size Guide page and the inventory\'s own ' +
+  'quick size filter use, so always match them exactly rather than rounding ' +
+  'or improvising your own cutoffs:\n' +
+  '  under 158 cm -> size XS\n' +
+  '  158–167 cm   -> size S\n' +
+  '  168–177 cm   -> size M\n' +
+  '  178–187 cm   -> size L\n' +
+  '  188–197 cm   -> size XL\n' +
+  '  198+ cm      -> size XXL\n' +
+  'Once you know (or can estimate) a budget, size, or preferred brand/frame ' +
+  'material, call the search_bikes tool to check the real, ' +
+  'currently-available inventory — never invent or assume a listing exists ' +
+  'without calling it first. If nothing matches, call search_bikes again ' +
+  'with looser criteria (e.g. drop the brand/material, or raise maxPrice) ' +
+  'and explain what differs about the closest option you found (price, ' +
+  'size, condition, etc.).';
 
 // Tool the model can call to check real, current inventory instead of
 // guessing — see searchBikes() below for what actually runs.
 const TOOLS = [
   {
     name: 'search_bikes',
-    description: 'البحث في قاعدة بيانات الدراجات المعروضة بناءً على الميزانية والمقاس المناسب للطول.',
+    description: 'البحث في قاعدة بيانات الدراجات المعروضة بناءً على الميزانية والمقاس وخامة الفريم المناسبة.',
     input_schema: {
       type: 'object',
       properties: {
@@ -132,6 +138,10 @@ const TOOLS = [
           type: 'string',
           description: "الماركة أو البراند المفضل إن وجد (مثال: 'Cervelo', 'Seka', 'Trek')",
         },
+        material: {
+          type: 'string',
+          description: "خامة الفريم إن حددها المستخدم — كربون (carbon) أو ألومنيوم (aluminum)",
+        },
       },
     },
   },
@@ -140,17 +150,25 @@ const TOOLS = [
 // Only ever searches approved + available listings — reserved/sold/pending
 // items are never surfaced to the assistant, so it can't recommend them.
 function searchBikes(input) {
-  const { maxPrice, size, brand } = input || {};
+  const { maxPrice, size, brand, material } = input || {};
+  // The model may pass the Arabic term itself (per the tool description
+  // above) even though frameMaterial is stored in English — normalize both
+  // common Arabic spellings to the English value they mean before matching.
+  const materialNormalized = material
+    ? String(material).toLowerCase().replace('كربون', 'carbon').replace('ألومنيوم', 'aluminum').replace('الومنيوم', 'aluminum')
+    : '';
   return loadProductsFromDisk()
     .filter((p) => p.status === 'approved' && p.availability === 'available')
     .filter((p) => typeof maxPrice !== 'number' || p.price <= maxPrice)
     .filter((p) => !size || String(p.size).toLowerCase().includes(String(size).toLowerCase()))
     .filter((p) => !brand || String(p.name).toLowerCase().includes(String(brand).toLowerCase()))
+    .filter((p) => !materialNormalized || String(p.frameMaterial || '').toLowerCase().includes(materialNormalized))
     .map((p) => ({
       name: p.name,
       type: p.type,
       price: p.price,
       size: p.size,
+      frameMaterial: p.frameMaterial,
       condition: p.condition,
       frameMaterial: p.frameMaterial,
     }));
