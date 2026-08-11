@@ -2848,6 +2848,23 @@
     .ride-status-banner-pending { background: rgba(245, 158, 11, 0.12); color: #F59E0B; }
     .ride-status-banner-full { background: rgba(220, 38, 38, 0.1); color: #DC2626; text-align: center; }
 
+    /* Club cards reuse .product-card/.ride-card-body/.ride-badge/
+       .ride-card-title/.ride-card-meta — only the top-row (badge + owner's
+       delete button) needs its own layout. */
+    .club-card-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .club-card-level {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
     /* ===== AI Chat Widget ===== */
     .chat-widget {
       position: fixed;
@@ -3509,6 +3526,7 @@
           <button class="ride-tab" id="rideTabMine" onclick="switchRideTab('mine')">
             <span data-i18n="ridesMineTab">طلعاتي</span> (<span id="rideMineCount">0</span>)
           </button>
+          <button class="ride-tab" id="rideTabClubs" onclick="switchRideTab('clubs')" data-i18n="clubsTab">🚴 أندية ومجموعات</button>
         </div>
 
         <!-- Browse -->
@@ -3617,6 +3635,53 @@
         <div id="rideMineSection" class="is-hidden">
           <div id="ridesMineContainer">
             <!-- User's rides will be rendered here -->
+          </div>
+        </div>
+
+        <!-- Clubs & Groups — a directory of recurring WhatsApp cycling
+             communities, distinct from the scheduled Rides above them.
+             Self-service: whoever adds one can delete it later (no
+             accept/reject flow needed here, unlike Rides). -->
+        <div id="rideClubsSection" class="is-hidden">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+            <p class="muted-text" data-i18n="clubsDesc" style="margin:0;">تواصل مع مجموعات التمارين والجولات الأسبوعية في الإمارات حسب مستواك وإمارتك.</p>
+            <button class="btn btn-auto" onclick="toggleAddClubForm()" id="addClubToggleBtn" data-i18n="clubsAddButton">+ أضف ناديك</button>
+          </div>
+
+          <div class="form-section is-hidden" id="addClubFormSection" style="max-width:640px;">
+            <h3 data-i18n="clubsAddTitle" style="margin:0 0 16px;">إضافة نادٍ / مجموعة</h3>
+            <div class="form-grid full" style="margin-bottom:16px;">
+              <div class="form-group">
+                <label data-i18n="clubsNameLabel">اسم النادي/المجموعة</label>
+                <input type="text" id="clubName" placeholder="مثال: مجموعة القدرة الصباحية" data-i18n-placeholder="clubsNamePlaceholder" />
+              </div>
+              <div class="form-group">
+                <label data-i18n="clubsLocationLabel">الموقع / المضمار</label>
+                <input type="text" id="clubLocation" placeholder="مثال: دبي - مسار القدرة" data-i18n-placeholder="clubsLocationPlaceholder" />
+              </div>
+              <div class="form-group">
+                <label data-i18n="clubsLevelLabel">المستوى</label>
+                <input type="text" id="clubLevel" placeholder="مثال: متوسط / محترف" data-i18n-placeholder="clubsLevelPlaceholder" />
+              </div>
+              <div class="form-group">
+                <label data-i18n="clubsScheduleLabel">أيام التمارين</label>
+                <input type="text" id="clubSchedule" placeholder="مثال: السبت والأحد" data-i18n-placeholder="clubsSchedulePlaceholder" />
+              </div>
+              <div class="form-group full" style="grid-column:1 / -1;">
+                <label data-i18n="clubsDescriptionLabel">نبذة عن المجموعة</label>
+                <textarea id="clubDescription" rows="3" placeholder="مثال: تمارين أسبوعية منتظمة صباح كل سبت وأحد" data-i18n-placeholder="clubsDescriptionPlaceholder"></textarea>
+              </div>
+              <div class="form-group full" style="grid-column:1 / -1;">
+                <label data-i18n="clubsWhatsappLabel">رابط مجموعة الواتساب</label>
+                <input type="url" id="clubWhatsappLink" placeholder="https://chat.whatsapp.com/..." data-i18n-placeholder="clubsWhatsappPlaceholder" dir="ltr" />
+              </div>
+            </div>
+            <button class="btn" id="clubSubmitBtn" onclick="submitCreateClub()" data-i18n="clubsSubmitButton">نشر النادي</button>
+          </div>
+
+          <div id="clubsLoadErrorContainer"></div>
+          <div id="clubsContainer">
+            <!-- Clubs will be rendered here -->
           </div>
         </div>
       </div>
@@ -4588,6 +4653,31 @@
         ridesRejectButton: 'رفض',
         ridesFillRequiredAlert: 'الرجاء تعبئة عنوان الطلعة والمضمار والتاريخ والوقت',
 
+        // Clubs
+        clubsTab: '🚴 أندية ومجموعات',
+        clubsDesc: 'تواصل مع مجموعات التمارين والجولات الأسبوعية في الإمارات حسب مستواك وإمارتك.',
+        clubsAddButton: '+ أضف ناديك',
+        clubsAddTitle: 'إضافة نادٍ / مجموعة',
+        clubsNameLabel: 'اسم النادي/المجموعة',
+        clubsNamePlaceholder: 'مثال: مجموعة القدرة الصباحية',
+        clubsLocationLabel: 'الموقع / المضمار',
+        clubsLocationPlaceholder: 'مثال: دبي - مسار القدرة',
+        clubsLevelLabel: 'المستوى',
+        clubsLevelPlaceholder: 'مثال: متوسط / محترف',
+        clubsScheduleLabel: 'أيام التمارين',
+        clubsSchedulePlaceholder: 'مثال: السبت والأحد',
+        clubsDescriptionLabel: 'نبذة عن المجموعة',
+        clubsDescriptionPlaceholder: 'مثال: تمارين أسبوعية منتظمة صباح كل سبت وأحد',
+        clubsWhatsappLabel: 'رابط مجموعة الواتساب',
+        clubsWhatsappPlaceholder: 'https://chat.whatsapp.com/...',
+        clubsSubmitButton: 'نشر النادي',
+        clubsFillRequiredAlert: 'الرجاء تعبئة اسم النادي والموقع ورابط الواتساب',
+        clubsLoadErrorText: 'تعذّر تحميل الأندية من الخادم. هل هو يعمل؟',
+        clubsNoClubs: 'لا توجد أندية مُدرجة بعد.',
+        clubsLevelPrefix: 'المستوى',
+        clubsJoinButton: 'انضم للواتساب',
+        clubsDeleteConfirm: 'هل تريد حذف هذا النادي؟',
+
         // AI Chat Widget
         chatWidgetTitle: '💬 مساعد المتجر',
         chatWidgetGreeting: 'مرحباً! كيف يمكنني مساعدتك في Pedalex اليوم؟',
@@ -5041,6 +5131,31 @@
         ridesRejectButton: 'Reject',
         ridesFillRequiredAlert: 'Please fill in the ride title, track, date, and time',
 
+        // Clubs
+        clubsTab: '🚴 Clubs & Groups',
+        clubsDesc: 'Connect with training groups and weekly rides in the UAE, by your level and Emirate.',
+        clubsAddButton: '+ Add your club',
+        clubsAddTitle: 'Add a Club / Group',
+        clubsNameLabel: 'Club/Group Name',
+        clubsNamePlaceholder: 'e.g. Al Qudra Morning Riders',
+        clubsLocationLabel: 'Location / Track',
+        clubsLocationPlaceholder: 'e.g. Dubai - Al Qudra Track',
+        clubsLevelLabel: 'Level',
+        clubsLevelPlaceholder: 'e.g. Intermediate / Advanced',
+        clubsScheduleLabel: 'Ride Days',
+        clubsSchedulePlaceholder: 'e.g. Saturday and Sunday',
+        clubsDescriptionLabel: 'About the group',
+        clubsDescriptionPlaceholder: 'e.g. Regular weekly rides every Saturday and Sunday morning',
+        clubsWhatsappLabel: 'WhatsApp Group Link',
+        clubsWhatsappPlaceholder: 'https://chat.whatsapp.com/...',
+        clubsSubmitButton: 'Publish Club',
+        clubsFillRequiredAlert: 'Please fill in the club name, location, and WhatsApp link',
+        clubsLoadErrorText: "Couldn't load clubs from the server. Is it running?",
+        clubsNoClubs: 'No clubs listed yet.',
+        clubsLevelPrefix: 'Level',
+        clubsJoinButton: 'Join WhatsApp',
+        clubsDeleteConfirm: 'Delete this club?',
+
         // AI Chat Widget
         chatWidgetTitle: '💬 Store Assistant',
         chatWidgetGreeting: 'Hi! How can I help you with Pedalex today?',
@@ -5220,6 +5335,12 @@
     let activeRideTab = 'browse';
     let selectedRideId = null;
 
+    // Clubs — same server-backed pattern (server.js /api/clubs, backed by
+    // clubs.json), but a plain directory: no accept/reject flow, just
+    // create/delete with ownerId-based ownership like products' sellerId.
+    let clubs = [];
+    let clubsLoadError = false;
+
     // ===== INITIALIZATION =====
     async function initApp() {
       loadData();
@@ -5286,6 +5407,24 @@
     async function retryLoadRides() {
       await loadRides();
       renderRidesPage();
+    }
+
+    async function loadClubs() {
+      try {
+        const res = await fetch('/api/clubs');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        clubs = await res.json();
+        clubsLoadError = false;
+      } catch (e) {
+        console.error('Error loading clubs from server:', e);
+        clubs = [];
+        clubsLoadError = true;
+      }
+    }
+
+    async function retryLoadClubs() {
+      await loadClubs();
+      renderClubs();
     }
 
     function loadData() {
@@ -5647,6 +5786,7 @@
       if (pageId === 'page-rides' && currentUser) {
         populateRideTracksDatalist();
         loadRides().then(renderRidesPage);
+        loadClubs().then(renderClubs);
       }
     }
 
@@ -6673,11 +6813,14 @@
       document.getElementById('rideTabBrowse').classList.toggle('active', tabName === 'browse');
       document.getElementById('rideTabCreate').classList.toggle('active', tabName === 'create');
       document.getElementById('rideTabMine').classList.toggle('active', tabName === 'mine');
+      document.getElementById('rideTabClubs').classList.toggle('active', tabName === 'clubs');
       document.getElementById('rideBrowseSection').classList.toggle('is-hidden', tabName !== 'browse');
       document.getElementById('rideCreateSection').classList.toggle('is-hidden', tabName !== 'create');
       document.getElementById('rideMineSection').classList.toggle('is-hidden', tabName !== 'mine');
+      document.getElementById('rideClubsSection').classList.toggle('is-hidden', tabName !== 'clubs');
       if (tabName === 'browse') renderRideBrowse();
       else if (tabName === 'mine') renderRideMine();
+      else if (tabName === 'clubs') renderClubs();
     }
 
     function renderRidesPage() {
@@ -7007,6 +7150,136 @@
       if (!ride) return;
       const pendingRequests = (ride.pendingRequests || []).filter(p => p.id !== reqId);
       await patchRide(rideId, { pendingRequests });
+    }
+
+    // ===== CLUBS =====
+    function toggleAddClubForm() {
+      document.getElementById('addClubFormSection').classList.toggle('is-hidden');
+    }
+
+    function renderClubs() {
+      const errContainer = document.getElementById('clubsLoadErrorContainer');
+      const container = document.getElementById('clubsContainer');
+
+      if (clubsLoadError) {
+        errContainer.innerHTML = `<div class="empty-state">
+          <p>${t('clubsLoadErrorText', "Couldn't load clubs from the server. Is it running?")}</p>
+          <button class="btn empty-state-add-btn" onclick="retryLoadClubs()">${t('retryButton', 'Retry')}</button>
+        </div>`;
+        container.innerHTML = '';
+        return;
+      }
+      errContainer.innerHTML = '';
+
+      if (clubs.length === 0) {
+        container.innerHTML = `<div class="empty-state">
+          <p>${t('clubsNoClubs', 'No clubs listed yet.')}</p>
+        </div>`;
+        return;
+      }
+      container.innerHTML = `<div class="products-grid">${clubs.map(createClubCard).join('')}</div>`;
+    }
+
+    // Delete button only renders for the club's own owner — same
+    // client-trust ownership model already used for products/rides
+    // (no server-side identity check either, consistent with the rest of
+    // this app's security boundaries).
+    function createClubCard(club) {
+      const isOwner = !!(currentUser && club.ownerId === currentUser.id);
+      const deleteBtn = isOwner
+        ? `<button class="profile-delete-btn" onclick="deleteClub(${club.id})" title="${escapeHtml(t('deleteText', 'Delete'))}">✕</button>`
+        : '';
+      const joinBtn = club.whatsappLink
+        ? `<a class="btn contact-btn-solid" href="${escapeHtml(club.whatsappLink)}" target="_blank" rel="noopener" style="width:100%; box-sizing:border-box; display:block; text-align:center; margin-top:10px;">${escapeHtml(t('clubsJoinButton', 'Join WhatsApp'))}</a>`
+        : '';
+      return `
+        <div class="product-card">
+          <div class="ride-card-body">
+            <div class="club-card-top-row">
+              <span class="ride-badge">${escapeHtml(club.locationBadge || '')}</span>
+              ${deleteBtn}
+            </div>
+            <div class="club-card-level">${escapeHtml(t('clubsLevelPrefix', 'Level'))}: ${escapeHtml(club.level || '—')}</div>
+            <div class="ride-card-title">${escapeHtml(club.name)}</div>
+            <div class="ride-card-meta">${escapeHtml(club.description || '')}</div>
+            <div class="ride-card-footer">
+              <span>${escapeHtml(t('clubsScheduleLabel', 'Schedule'))}: <strong>${escapeHtml(club.schedule || '—')}</strong></span>
+            </div>
+            ${joinBtn}
+          </div>
+        </div>
+      `;
+    }
+
+    async function submitCreateClub() {
+      if (!currentUser) return;
+      const name = document.getElementById('clubName').value.trim();
+      const locationBadge = document.getElementById('clubLocation').value.trim();
+      const whatsappLink = document.getElementById('clubWhatsappLink').value.trim();
+      if (!name || !locationBadge || !whatsappLink) {
+        alert(t('clubsFillRequiredAlert', 'Please fill in the club name, location, and WhatsApp link'));
+        return;
+      }
+
+      const newClub = {
+        name,
+        locationBadge,
+        level: document.getElementById('clubLevel').value.trim(),
+        schedule: document.getElementById('clubSchedule').value.trim(),
+        description: document.getElementById('clubDescription').value.trim(),
+        whatsappLink,
+        ownerId: currentUser.id,
+        ownerName: currentUser.name,
+      };
+
+      const submitBtn = document.getElementById('clubSubmitBtn');
+      const originalLabel = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.textContent = t('publishingButton', '⏳ جاري النشر...');
+
+      try {
+        const res = await fetch('/api/clubs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newClub),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        await loadClubs();
+      } catch (e) {
+        console.error('Error creating club:', e);
+        alert(currentLanguage === 'ar' ? 'تعذّر إضافة النادي.' : 'Could not add the club.');
+        return;
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalLabel;
+      }
+
+      clearClubForm();
+      document.getElementById('addClubFormSection').classList.add('is-hidden');
+      renderClubs();
+    }
+
+    function clearClubForm() {
+      document.getElementById('clubName').value = '';
+      document.getElementById('clubLocation').value = '';
+      document.getElementById('clubLevel').value = '';
+      document.getElementById('clubSchedule').value = '';
+      document.getElementById('clubDescription').value = '';
+      document.getElementById('clubWhatsappLink').value = '';
+    }
+
+    async function deleteClub(id) {
+      if (!confirm(t('clubsDeleteConfirm', 'Delete this club?'))) return;
+      try {
+        const res = await fetch(`/api/clubs/${id}`, { method: 'DELETE' });
+        if (!res.ok && res.status !== 404) throw new Error(`HTTP ${res.status}`);
+        await loadClubs();
+      } catch (e) {
+        console.error('Error deleting club:', e);
+        alert(currentLanguage === 'ar' ? 'تعذّر حذف النادي.' : 'Could not delete the club.');
+        return;
+      }
+      renderClubs();
     }
 
     // ===== USER PROFILE =====
