@@ -704,6 +704,111 @@ async function handleDeleteRide(req, res, id) {
   res.end();
 }
 
+// ---- Clubs API ----------------------------------------------------------------
+// A directory of recurring WhatsApp cycling clubs/groups — distinct from
+// Rides (which are single scheduled events with an accept/reject join flow).
+// Clubs are just self-service directory entries: whoever adds one owns it
+// and can remove it later, same ownership pattern as products' sellerId.
+
+const CLUBS_FILE = path.join(ROOT, 'clubs.json');
+const CLUB_MAX_BODY_BYTES = 50_000; // plain text fields only
+
+const DEMO_CLUBS = [
+  {
+    id: 1,
+    name: 'مجموعة القدرة الصباحية (Al Qudra Riders)',
+    locationBadge: 'دبي - مسار القدرة',
+    level: 'متوسط / محترف',
+    description: 'تمارين أسبوعية منتظمة صباح كل سبت وأحد. متوسط السرعة بين 32 إلى 36 كم/ساعة.',
+    schedule: 'السبت والأحد',
+    whatsappLink: 'https://chat.whatsapp.com/',
+    ownerId: 8100,
+    ownerName: 'مجتمع القدرة',
+    createdAt: '2026-08-01T10:00:00.000Z',
+  },
+  {
+    id: 2,
+    name: 'مجتمع الحديريات للدراجات (Hudayriyat Social)',
+    locationBadge: 'أبوظبي - جزيرة الحديريات',
+    level: 'جميع المستويات',
+    description: 'جولات مسائية خفيفة ومناسبة للمبتدئين والمتوسطين للاستمتاع بركوب الدراجة والتعارف.',
+    schedule: 'الثلاثاء والخميس',
+    whatsappLink: 'https://chat.whatsapp.com/',
+    ownerId: 8101,
+    ownerName: 'مجتمع الحديريات',
+    createdAt: '2026-08-02T10:00:00.000Z',
+  },
+];
+
+function loadClubsFromDisk() {
+  if (!fs.existsSync(CLUBS_FILE)) {
+    fs.writeFileSync(CLUBS_FILE, JSON.stringify(DEMO_CLUBS, null, 2));
+    return DEMO_CLUBS;
+  }
+  try {
+    const parsed = JSON.parse(fs.readFileSync(CLUBS_FILE, 'utf8'));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    console.error('Error reading clubs.json, treating as empty:', e);
+    return [];
+  }
+}
+
+function saveClubsToDisk(clubs) {
+  fs.writeFileSync(CLUBS_FILE, JSON.stringify(clubs, null, 2));
+}
+
+async function handleGetClubs(req, res) {
+  sendJson(res, 200, loadClubsFromDisk());
+}
+
+async function handleCreateClub(req, res) {
+  let body;
+  try {
+    body = await readJsonBody(req, CLUB_MAX_BODY_BYTES);
+  } catch (e) {
+    sendJson(res, e.status || 400, { error: e.message });
+    return;
+  }
+  const clubs = loadClubsFromDisk();
+  const newClub = { ...body, id: Date.now(), createdAt: new Date().toISOString() };
+  clubs.push(newClub);
+  saveClubsToDisk(clubs);
+  sendJson(res, 201, newClub);
+}
+
+async function handleUpdateClub(req, res, id) {
+  let body;
+  try {
+    body = await readJsonBody(req, CLUB_MAX_BODY_BYTES);
+  } catch (e) {
+    sendJson(res, e.status || 400, { error: e.message });
+    return;
+  }
+  const clubs = loadClubsFromDisk();
+  const idx = clubs.findIndex((c) => String(c.id) === String(id));
+  if (idx === -1) {
+    sendJson(res, 404, { error: 'Club not found' });
+    return;
+  }
+  clubs[idx] = { ...clubs[idx], ...body, id: clubs[idx].id };
+  saveClubsToDisk(clubs);
+  sendJson(res, 200, clubs[idx]);
+}
+
+async function handleDeleteClub(req, res, id) {
+  const clubs = loadClubsFromDisk();
+  const idx = clubs.findIndex((c) => String(c.id) === String(id));
+  if (idx === -1) {
+    sendJson(res, 404, { error: 'Club not found' });
+    return;
+  }
+  clubs.splice(idx, 1);
+  saveClubsToDisk(clubs);
+  res.writeHead(204);
+  res.end();
+}
+
 // ---- Router -----------------------------------------------------------------
 
 const server = http.createServer((req, res) => {
@@ -733,6 +838,18 @@ const server = http.createServer((req, res) => {
     if (req.method === 'POST' && !id) { handleCreateRide(req, res); return; }
     if (req.method === 'PATCH' && id) { handleUpdateRide(req, res, id); return; }
     if (req.method === 'DELETE' && id) { handleDeleteRide(req, res, id); return; }
+    res.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('405 Method Not Allowed');
+    return;
+  }
+
+  const clubMatch = urlPath.match(/^\/api\/clubs(?:\/([^/]+))?$/);
+  if (clubMatch) {
+    const id = clubMatch[1];
+    if (req.method === 'GET' && !id) { handleGetClubs(req, res); return; }
+    if (req.method === 'POST' && !id) { handleCreateClub(req, res); return; }
+    if (req.method === 'PATCH' && id) { handleUpdateClub(req, res, id); return; }
+    if (req.method === 'DELETE' && id) { handleDeleteClub(req, res, id); return; }
     res.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('405 Method Not Allowed');
     return;
