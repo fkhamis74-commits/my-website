@@ -177,15 +177,6 @@
       border: 2px solid white;
     }
 
-    .category-card-icon {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 3.5rem;
-    }
-
-    .cat-gradient-add { background: linear-gradient(135deg,#2c1a0a,var(--accent)); }
-
     .features-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -3339,7 +3330,6 @@
           <button class="nav-btn" onclick="showPage('page-home')" data-i18n="homeButton">الرئيسية</button>
           <button class="nav-btn" onclick="showPage('page-inventory')" data-i18n="inventoryButton">تصفح الدراجات</button>
           <button class="nav-btn" onclick="showPage('page-rides')" data-i18n="ridesNavButton">طلعات الدراجات</button>
-          <button class="nav-btn" onclick="showPage('page-add')" data-i18n="sellBikeButton">بيع دراجتك</button>
           <button class="nav-btn" onclick="showPage('page-size-guide')" data-i18n="sizeGuideNavButton">دليل المقاسات</button>
           <button class="nav-btn" onclick="showPage('page-about')" data-i18n="aboutButton">عن الموقع</button>
           <button class="nav-btn is-hidden" id="admin-btn" onclick="showPage('page-admin')" data-i18n="adminButton">الإدارة</button>
@@ -3401,10 +3391,6 @@
           <div class="category-card" onclick="goToInventoryFiltered('accessory')">
             <img class="category-card-img" src="https://images.unsplash.com/photo-1701522814809-c339c2b60a7b?auto=format&fit=crop&w=400&q=70" alt="" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=400';" />
             <div class="category-card-overlay" data-i18n="accessoriesCategory">ملحقات</div>
-          </div>
-          <div class="category-card" onclick="showPage('page-add')">
-            <div class="category-card-img category-card-icon cat-gradient-add">➕</div>
-            <div class="category-card-overlay" data-i18n="addItemButton">أضف منتجك</div>
           </div>
         </div>
 
