@@ -1,0 +1,10 @@
+node_modules/
+.env
+*.log
+
+# Runtime product/ride/club data — auto-seeded by server.js on first run from
+# its built-in demo listings, so it doesn't need to be (and shouldn't be)
+# committed. Delete any of these any time to reset it to the demo seed data.
+products.json
+rides.json
+clubs.json

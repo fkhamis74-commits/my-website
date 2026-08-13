@@ -1869,6 +1869,7 @@
       cursor: pointer;
       font-family: inherit;
       font-size: inherit;
+      text-decoration: none; /* the social row below reuses this class on <a> tags */
       padding: 0;
       transition: color 0.2s;
     }
@@ -1876,6 +1877,16 @@
     .site-footer-link:hover {
       color: white;
     }
+
+    .site-footer-social {
+      display: flex;
+      gap: 16px;
+      font-size: 0.8rem;
+    }
+
+    .site-footer-social-instagram:hover { color: #EC4899; }
+    .site-footer-social-tiktok:hover { color: white; }
+    .site-footer-social-whatsapp:hover { color: #10B981; }
 
     .site-footer-copyright {
       color: #475569;
@@ -4150,6 +4161,14 @@
           <button class="site-footer-link" onclick="openLegalModal('terms')" data-i18n="footerTermsLink">الشروط والأحكام</button>
           <button class="site-footer-link" onclick="openLegalModal('privacy')" data-i18n="footerPrivacyLink">سياسة الخصوصية</button>
         </div>
+        <div class="site-footer-social">
+          <a href="https://instagram.com/pedalex.ae" target="_blank" rel="noopener" class="site-footer-link site-footer-social-instagram" data-i18n="footerInstagramLink">إنستغرام</a>
+          <a href="https://tiktok.com/@pedalex.ae" target="_blank" rel="noopener" class="site-footer-link site-footer-social-tiktok" data-i18n="footerTiktokLink">تيك توك</a>
+          <!-- Placeholder support number — same demo digits used across
+               DEMO_PRODUCTS, kept intentionally until a real support line
+               is available (confirmed with the user). -->
+          <a href="https://wa.me/971500000000" target="_blank" rel="noopener" class="site-footer-link site-footer-social-whatsapp" data-i18n="footerWhatsappSupportLink">دعم الواتساب</a>
+        </div>
         <div class="site-footer-copyright" data-i18n="footerCopyright">© 2026 Pedalex. جميع الحقوق محفوظة.</div>
       </div>
     </footer>
@@ -4473,6 +4492,9 @@
         footerTagline: 'منصة إعلانات مبوبة مستقلة للدراجات الهوائية في الإمارات.',
         footerTermsLink: 'الشروط والأحكام',
         footerPrivacyLink: 'سياسة الخصوصية',
+        footerInstagramLink: 'إنستغرام',
+        footerTiktokLink: 'تيك توك',
+        footerWhatsappSupportLink: 'دعم الواتساب',
         footerCopyright: '© 2026 Pedalex. جميع الحقوق محفوظة.',
         legalCloseButton: 'موافق وإغلاق',
         sortNewestOption: 'الأحدث',
@@ -4951,6 +4973,9 @@
         footerTagline: 'An independent classifieds platform for bikes in the UAE.',
         footerTermsLink: 'Terms & Conditions',
         footerPrivacyLink: 'Privacy Policy',
+        footerInstagramLink: 'Instagram',
+        footerTiktokLink: 'TikTok',
+        footerWhatsappSupportLink: 'WhatsApp Support',
         footerCopyright: '© 2026 Pedalex. All rights reserved.',
         legalCloseButton: 'Agree & Close',
         sortNewestOption: 'Newest',
