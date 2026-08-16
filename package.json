@@ -14,7 +14,11 @@
   },
   "devDependencies": {
     "@capacitor/android": "^8.5.0",
+    "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^8.5.0",
     "@capacitor/ios": "^8.5.0"
+  },
+  "allowScripts": {
+    "sharp@0.32.6": true
   }
 }

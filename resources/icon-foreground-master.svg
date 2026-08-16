@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Scaled down and centered on the mark's own bounding-box midpoint
+       (~55.5, 52.5 — not the canvas center) so it sits inside Android's
+       adaptive-icon safe zone (launchers mask the foreground layer with a
+       circle/squircle and would otherwise clip the wide parts of the "P"). -->
+  <g transform="translate(50 50) scale(0.75) translate(-55.5 -52.5)">
+    <path d="M35 25H58C67.9411 25 76 33.0589 76 43C76 52.9411 67.9411 61 58 61H47V75H35V25Z" fill="white"/>
+    <circle cx="58" cy="43" r="10" fill="#1E293B"/>
+    <circle cx="47" cy="75" r="5" fill="#93C5FD"/>
+  </g>
+</svg>
