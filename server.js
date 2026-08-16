@@ -12,6 +12,14 @@
 // The chat widget (POST /api/chat) needs an Anthropic API key. Set it either as
 // a real environment variable, or in a local ".env" file (not committed) as:
 //   ANTHROPIC_API_KEY=sk-ant-...
+//
+// DATA_DIR controls where products/rides/clubs/users/sessions.json live.
+// Defaults to this project folder (fine for local dev), but on a host with
+// an ephemeral filesystem — e.g. Render's free/non-disk plans — that folder
+// gets wiped on every deploy/restart, silently resetting every account and
+// listing back to the demo seed data. Set DATA_DIR to a mounted persistent
+// disk's path (e.g. Render's Disks feature, mounted at /var/data) in
+// production so the data actually survives deploys.
 
 const http = require('http');
 const fs = require('fs');
@@ -19,6 +27,10 @@ const path = require('path');
 const crypto = require('crypto');
 
 const ROOT = __dirname;
+const DATA_DIR = process.env.DATA_DIR || ROOT;
+// Harmless when DATA_DIR already exists (the default ROOT case); makes sure
+// a freshly-mounted, empty disk doesn't fail the first write.
+fs.mkdirSync(DATA_DIR, { recursive: true });
 const HOST = process.env.HOST || '0.0.0.0';
 const PORT = process.env.PORT || 8080;
 
@@ -356,8 +368,8 @@ async function handleChat(req, res) {
 // weren't theirs. Every mutating request below now requires a valid session
 // token, and ownership/admin checks happen here, not just in the UI.
 
-const USERS_FILE = path.join(ROOT, 'users.json');
-const SESSIONS_FILE = path.join(ROOT, 'sessions.json');
+const USERS_FILE = path.join(DATA_DIR, 'users.json');
+const SESSIONS_FILE = path.join(DATA_DIR, 'sessions.json');
 const AUTH_MAX_BODY_BYTES = 20_000; // plain text fields only
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
@@ -733,7 +745,7 @@ function maskEmail(email) {
 // Users, messages, and moderation state still live in each browser's own
 // localStorage; only product listings are shared across visitors here.
 
-const PRODUCTS_FILE = path.join(ROOT, 'products.json');
+const PRODUCTS_FILE = path.join(DATA_DIR, 'products.json');
 const PRODUCT_MAX_BODY_BYTES = 8_000_000; // generous — product images are base64-encoded
 
 // Same starting inventory the app used to seed into localStorage, so a fresh
@@ -976,7 +988,7 @@ async function handleDeleteProduct(req, res, id) {
 // looking at the same record) — so it follows that file's exact pattern
 // rather than living in localStorage like users/messages do.
 
-const RIDES_FILE = path.join(ROOT, 'rides.json');
+const RIDES_FILE = path.join(DATA_DIR, 'rides.json');
 const RIDE_MAX_BODY_BYTES = 200_000; // plain text/number fields only, no images
 
 // Neutral example rides for a fresh deployment — organizerId values (8000s)
@@ -1204,7 +1216,7 @@ async function handleDeleteRide(req, res, id) {
 // Clubs are just self-service directory entries: whoever adds one owns it
 // and can remove it later, same ownership pattern as products' sellerId.
 
-const CLUBS_FILE = path.join(ROOT, 'clubs.json');
+const CLUBS_FILE = path.join(DATA_DIR, 'clubs.json');
 const CLUB_MAX_BODY_BYTES = 50_000; // plain text fields only
 
 const DEMO_CLUBS = [
