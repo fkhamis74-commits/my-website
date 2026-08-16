@@ -8,3 +8,20 @@ node_modules/
 products.json
 rides.json
 clubs.json
+
+# Capacitor build artifact — always regenerated from index.html via
+# `npm run cap:sync`, never a source file. Don't commit it, or it can drift
+# out of sync with the real index.html and ship stale content in the app.
+www/
+
+# Native iOS/Android build outputs and installed dependencies — the ios/ and
+# android/ project folders themselves ARE committed (they hold the actual
+# native project config), but these regenerated subfolders are not.
+ios/App/Pods/
+ios/App/build/
+ios/DerivedData/
+android/app/build/
+android/build/
+android/.gradle/
+android/captures/
+android/local.properties

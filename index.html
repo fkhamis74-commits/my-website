@@ -4381,6 +4381,21 @@
     // adding a new external dependency.
     const FALLBACK_IMAGE_URL = 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=800';
 
+    // Absolute backend origin — stays empty (so /api/... calls resolve
+    // relative, same as always) when running as the real website or a local
+    // dev server. Only resolves to the production URL when this file is
+    // running bundled inside the native iOS/Android app (Capacitor loads it
+    // from a local/custom-scheme origin, where a relative path would try to
+    // hit the app's own bundle instead of the real server).
+    // window.Capacitor is the officially documented way to detect the
+    // native runtime — checking origin/hostname instead is a trap: the iOS
+    // native WebView's origin is "capacitor://localhost", which has
+    // hostname "localhost" too, indistinguishable from the real local dev
+    // server that way.
+    const API_BASE = (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())
+      ? 'https://my-website-bng4.onrender.com'
+      : '';
+
     // ===== TRANSLATIONS =====
     const translations = {
       ar: {
@@ -5452,7 +5467,7 @@
     // of a misleading "no products" empty state.
     async function loadProducts() {
       try {
-        const res = await fetch('/api/products');
+        const res = await fetch(`${API_BASE}/api/products`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         products = await res.json();
         productsLoadError = false;
@@ -5477,7 +5492,7 @@
     // viewed this session.
     async function loadRides() {
       try {
-        const res = await fetch('/api/rides');
+        const res = await fetch(`${API_BASE}/api/rides`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         rides = await res.json();
         ridesLoadError = false;
@@ -5495,7 +5510,7 @@
 
     async function loadClubs() {
       try {
-        const res = await fetch('/api/clubs');
+        const res = await fetch(`${API_BASE}/api/clubs`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         clubs = await res.json();
         clubsLoadError = false;
@@ -6363,7 +6378,7 @@
 
       let created = false;
       try {
-        const res = await fetch('/api/products', {
+        const res = await fetch(`${API_BASE}/api/products`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newProductPayload),
@@ -6676,7 +6691,7 @@
       if (!product) return;
       const newCount = (product.favorites || 0) + 1;
       try {
-        const res = await fetch(`/api/products/${productId}`, {
+        const res = await fetch(`${API_BASE}/api/products/${productId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ favorites: newCount }),
@@ -7104,7 +7119,7 @@
       submitBtn.textContent = t('publishingButton', '⏳ جاري النشر...');
 
       try {
-        const res = await fetch('/api/rides', {
+        const res = await fetch(`${API_BASE}/api/rides`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newRide),
@@ -7219,7 +7234,7 @@
     // it in, then refreshes both the modal (if still open) and the page.
     async function patchRide(rideId, partialUpdate) {
       try {
-        const res = await fetch(`/api/rides/${rideId}`, {
+        const res = await fetch(`${API_BASE}/api/rides/${rideId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(partialUpdate),
@@ -7370,7 +7385,7 @@
       submitBtn.textContent = t('publishingButton', '⏳ جاري النشر...');
 
       try {
-        const res = await fetch('/api/clubs', {
+        const res = await fetch(`${API_BASE}/api/clubs`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newClub),
@@ -7403,7 +7418,7 @@
     async function deleteClub(id) {
       if (!confirm(t('clubsDeleteConfirm', 'Delete this club?'))) return;
       try {
-        const res = await fetch(`/api/clubs/${id}`, { method: 'DELETE' });
+        const res = await fetch(`${API_BASE}/api/clubs/${id}`, { method: 'DELETE' });
         if (!res.ok && res.status !== 404) throw new Error(`HTTP ${res.status}`);
         await loadClubs();
       } catch (e) {
@@ -7493,7 +7508,7 @@
       const idx = products.findIndex(p => p.id === productId);
       if (idx === -1) return;
       try {
-        const res = await fetch(`/api/products/${productId}`, {
+        const res = await fetch(`${API_BASE}/api/products/${productId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ availability }),
@@ -7512,7 +7527,7 @@
     async function deleteMyProduct(productId) {
       if (!confirm(t('deleteProductConfirm', 'Delete this product?'))) return;
       try {
-        const res = await fetch(`/api/products/${productId}`, { method: 'DELETE' });
+        const res = await fetch(`${API_BASE}/api/products/${productId}`, { method: 'DELETE' });
         if (!res.ok && res.status !== 404) throw new Error(`HTTP ${res.status}`);
         await loadProducts();
       } catch (e) {
@@ -7597,7 +7612,7 @@
       const idx = products.findIndex(p => p.id === productId);
       if (idx === -1) return;
       try {
-        const res = await fetch(`/api/products/${productId}`, {
+        const res = await fetch(`${API_BASE}/api/products/${productId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: 'approved', adminNotes: '' }),
@@ -7630,7 +7645,7 @@
       const idx = products.findIndex(p => p.id === productId);
       if (idx === -1) return;
       try {
-        const res = await fetch(`/api/products/${productId}`, {
+        const res = await fetch(`${API_BASE}/api/products/${productId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: 'rejected', adminNotes: notes }),
@@ -7660,7 +7675,7 @@
       // Best-effort cascade — if one delete fails the others still go
       // through rather than leaving the whole operation half-done.
       await Promise.allSettled(theirProducts.map(p =>
-        fetch(`/api/products/${p.id}`, { method: 'DELETE' })
+        fetch(`${API_BASE}/api/products/${p.id}`, { method: 'DELETE' })
       ));
       await loadProducts();
       saveData();
@@ -7706,7 +7721,7 @@
     async function deleteProduct(productId) {
       if (!confirm(t('areYouSure', 'Are you sure?'))) return;
       try {
-        const res = await fetch(`/api/products/${productId}`, { method: 'DELETE' });
+        const res = await fetch(`${API_BASE}/api/products/${productId}`, { method: 'DELETE' });
         if (!res.ok && res.status !== 404) throw new Error(`HTTP ${res.status}`);
         await loadProducts();
       } catch (e) {
@@ -7814,7 +7829,7 @@
       container.scrollTop = container.scrollHeight;
 
       try {
-        const response = await fetch('/api/chat', {
+        const response = await fetch(`${API_BASE}/api/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ messages: chatHistory }),
