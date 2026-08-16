@@ -1037,6 +1037,11 @@
       box-shadow: 0 6px 20px rgba(251, 191, 36, 0.3);
     }
 
+    .share-btn:hover {
+      border-color: var(--accent);
+      transform: scale(1.05);
+    }
+
     /* "Contact Seller" gets its own green, distinct from both the site's
        blue accent and the WhatsApp button's own brand green (#25D366). */
     .contact-btn {
@@ -4267,6 +4272,7 @@
             <button class="btn modal-contact-btn" id="modalContactBtn" data-i18n="modalContactSeller">💬 تواصل مع البائع</button>
             <a class="btn-whatsapp modal-whatsapp-btn is-hidden" id="modalWhatsappBtn" target="_blank" rel="noopener">💬 WhatsApp</a>
             <button class="action-btn favorite-btn modal-fav-btn" id="modalFavBtn" title="إضافة للمفضلة" aria-label="إضافة للمفضلة" data-i18n-title="addToFavoritesTitle" data-i18n-aria-label="addToFavoritesTitle">❤️</button>
+            <button class="action-btn share-btn modal-share-btn" id="modalShareBtn" title="مشاركة" aria-label="مشاركة" data-i18n-title="shareProductTitle" data-i18n-aria-label="shareProductTitle">📤</button>
           </div>
         </div>
       </div>
@@ -4800,6 +4806,9 @@
         contactLabel: '💬 تواصل',
         contactShortLabel: 'تواصل',
         addToFavoritesTitle: 'إضافة للمفضلة',
+        shareProductTitle: 'مشاركة',
+        shareLinkCopiedAlert: 'تم نسخ الرابط! الصقه بأي مكان تبي تشارك فيه.',
+        shareLinkManualPrompt: 'انسخ هذا الرابط:',
         cannotMessageAlert: 'لا يمكنك المراسلة',
         sellerInfoTitle: 'معلومات البائع',
         phoneText: 'الهاتف',
@@ -5283,6 +5292,9 @@
         contactLabel: '💬 Contact',
         contactShortLabel: 'Contact',
         addToFavoritesTitle: 'Add to favorites',
+        shareProductTitle: 'Share',
+        shareLinkCopiedAlert: 'Link copied! Paste it anywhere you want to share.',
+        shareLinkManualPrompt: 'Copy this link:',
         cannotMessageAlert: 'Cannot message',
         sellerInfoTitle: 'Seller Info',
         phoneText: 'Phone',
@@ -5428,6 +5440,7 @@
         renderInventory();
         renderUserProfile();
         showPage('page-home');
+        openSharedProductFromHash();
       }
     }
 
@@ -5957,6 +5970,7 @@
         : `<span class="modal-notes-empty">${t('modalNoExtraNotes', 'No additional notes')}</span>`;
       document.getElementById('modalContactBtn').onclick = () => { closeBikeModal(); startConversation(productId); };
       document.getElementById('modalFavBtn').onclick = () => toggleFavorite(productId);
+      document.getElementById('modalShareBtn').onclick = () => shareProduct(productId);
       const whatsappBtn = document.getElementById('modalWhatsappBtn');
       const whatsappLink = buildWhatsAppLink(product);
       whatsappBtn.classList.toggle('is-hidden', !whatsappLink);
@@ -5972,6 +5986,53 @@
     document.getElementById('bikeModal').addEventListener('click', function(e) {
       if (e.target === this) closeBikeModal();
     });
+
+    // Uses the OS-native share sheet (shows every installed app — Instagram,
+    // TikTok, Snapchat, WhatsApp, Messages, etc.) since none of those
+    // platforms offer a URL-based "pre-fill and share" intent the way
+    // WhatsApp/Twitter do — a native share is the only thing that actually
+    // reaches all of them. Falls back to copying a link when the Web Share
+    // API isn't available (most desktop browsers).
+    async function shareProduct(productId) {
+      const product = products.find(p => p.id === productId);
+      if (!product) return;
+      const name = localizeProductText(product, 'name', 'nameEn') || product.name;
+      const currency = currentLanguage === 'ar' ? 'د.إ' : 'AED';
+      // Hash-based deep link — checked on load by openSharedProductFromHash()
+      // — so a shared link actually opens the right listing, not just the homepage.
+      const shareUrl = `${location.origin}${location.pathname}#product-${productId}`;
+      const shareText = `${name} — ${product.price} ${currency}`;
+
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: name, text: shareText, url: shareUrl });
+        } catch (err) {
+          // AbortError just means the user closed the share sheet — not a real failure.
+          if (err.name !== 'AbortError') console.error('Share failed:', err);
+        }
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+        alert(t('shareLinkCopiedAlert', 'Link copied! Paste it anywhere you want to share.'));
+      } catch (err) {
+        console.error('Clipboard copy failed:', err);
+        prompt(t('shareLinkManualPrompt', 'Copy this link:'), shareUrl);
+      }
+    }
+
+    // Opens the shared product's modal if the page was loaded via a
+    // shareProduct() link (#product-<id>) — called once products are loaded.
+    function openSharedProductFromHash() {
+      const match = location.hash.match(/^#product-(.+)$/);
+      if (!match) return;
+      const id = isNaN(Number(match[1])) ? match[1] : Number(match[1]);
+      if (products.some(p => p.id === id)) {
+        showPage('page-inventory');
+        openBikeModal(id);
+      }
+    }
 
     // ===== FOOTER / LEGAL MODAL =====
     // Content lives in translations[lang].legal (see the ar/en blocks) so it
