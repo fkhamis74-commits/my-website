@@ -261,6 +261,46 @@
       margin-bottom: 40px;
     }
 
+    .social-follow-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 40px;
+    }
+
+    .social-follow-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 26px;
+      border-radius: 50px;
+      color: white;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.9rem;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .social-follow-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .social-follow-btn-instagram {
+      background: linear-gradient(135deg, #833AB4, #E1306C 55%, #F77737);
+      box-shadow: 0 4px 14px rgba(225, 48, 108, 0.35);
+    }
+
+    .social-follow-btn-tiktok {
+      background: #000000;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+    }
+
+    .social-follow-btn-snapchat {
+      background: #FFFC00;
+      color: #0F172A;
+      box-shadow: 0 4px 14px rgba(255, 252, 0, 0.35);
+    }
+
     .admin-pending-section {
       border-top: 4px solid #F59E0B;
     }
@@ -4129,6 +4169,20 @@
           </div>
         </div>
 
+        <!-- Follow Us -->
+        <h2 class="section-heading" data-i18n="socialFollowHeading">📱 تابعنا</h2>
+        <div class="social-follow-row">
+          <a href="https://instagram.com/pedalexbikes" target="_blank" rel="noopener" class="social-follow-btn social-follow-btn-instagram">
+            <span aria-hidden="true">📷</span> <span data-i18n="footerInstagramLink">إنستغرام</span>
+          </a>
+          <a href="https://tiktok.com/@pedalexbikes" target="_blank" rel="noopener" class="social-follow-btn social-follow-btn-tiktok">
+            <span aria-hidden="true">🎵</span> <span data-i18n="footerTiktokLink">تيك توك</span>
+          </a>
+          <a href="https://www.snapchat.com/add/pedalexbikes" target="_blank" rel="noopener" class="social-follow-btn social-follow-btn-snapchat">
+            <span aria-hidden="true">👻</span> <span data-i18n="footerSnapchatLink">سناب شات</span>
+          </a>
+        </div>
+
         <!-- Contact -->
         <h2 class="section-heading" data-i18n="contactHeading">📬 تواصل معنا</h2>
         <div class="contact-card">
@@ -4408,6 +4462,7 @@
         faqA4: 'تواصل معنا عبر نموذج الدعم أدناه أو عبر البريد الإلكتروني. سنستجيب خلال 24 ساعة وسنساعدك في حل أي نزاع.',
         faqQ5: 'هل يمكنني إضافة ملحقات ومعدات وليس فقط دراجات؟',
         faqA5: 'بالتأكيد! يمكنك إضافة الخوذات والكفوف والإضاءة والأحزمة وغيرها من الملحقات بنفس الطريقة.',
+        socialFollowHeading: '📱 تابعنا',
         contactHeading: '📬 تواصل معنا',
         contactNameLabel: 'اسمك',
         contactNamePlaceholder: 'اسمك الكامل',
@@ -4890,6 +4945,7 @@
         faqA4: 'Contact us using the support form below or by email. We respond within 24 hours and help resolve disputes.',
         faqQ5: 'Can I list accessories and gear, not just bikes?',
         faqA5: 'Absolutely. You can list helmets, gloves, lights, straps, and other cycling accessories the same way.',
+        socialFollowHeading: '📱 Follow Us',
         contactHeading: '📬 Contact Us',
         contactNameLabel: 'Your Name',
         contactNamePlaceholder: 'Your full name',
