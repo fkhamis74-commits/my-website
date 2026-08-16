@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title data-i18n="documentTitle">Pedalex | سوق الدراجات الهوائية ودراجات الطريق في الإمارات</title>
   <meta name="description" content="منصة Pedalex لبيع وشراء الدراجات الهوائية ودراجات الطريق (Road Bikes) ومعداتها في الإمارات. ابحث عن المقاس والميزانية المناسبة لك بسهولة عبر تواصل واتساب مباشر." />
   <link rel="icon" type="image/svg+xml" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="%232563EB"/><path d="M35 25H58C67.9 25 76 33 76 43C76 53 67.9 61 58 61H47V75H35V25Z" fill="white"/><circle cx="58" cy="43" r="8" fill="%231E293B"/></svg>'>
@@ -427,7 +427,11 @@
     .header {
       background: var(--card);
       box-shadow: var(--shadow);
-      padding: 18px 28px;
+      /* env(safe-area-inset-top) is 0 on regular browsers, but on the
+         Capacitor iOS app the WebView spans edge-to-edge, so without this
+         the logo sits behind the notch/Dynamic Island. Harmless everywhere
+         else. */
+      padding: calc(18px + env(safe-area-inset-top)) 28px 18px;
       margin-bottom: 32px;
       border-radius: 0;
       display: flex;
@@ -2916,7 +2920,9 @@
     /* ===== AI Chat Widget ===== */
     .chat-widget {
       position: fixed;
-      bottom: 24px;
+      /* + env(safe-area-inset-bottom) keeps the bubble clear of the iPhone
+         home-indicator gesture bar in the native app; adds 0 on the web. */
+      bottom: calc(24px + env(safe-area-inset-bottom));
       left: 24px;
       z-index: 500;
     }
@@ -3158,6 +3164,17 @@
         max-width: none;
         max-height: none;
         border-radius: 0;
+      }
+
+      /* Full-screen here means the header/input touch the real screen
+         edges — pad them clear of the notch and home-indicator. 0 on the
+         regular web. */
+      .chat-panel-header {
+        padding-top: calc(14px + env(safe-area-inset-top));
+      }
+
+      .chat-panel-input {
+        padding-bottom: calc(12px + env(safe-area-inset-bottom));
       }
 
       /* 16px stops iOS Safari from auto-zooming the page when the input
