@@ -16,6 +16,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const ROOT = __dirname;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -191,13 +192,19 @@ const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 20;
 const rateLimitHits = new Map(); // ip -> [timestamps]
 
-function isRateLimited(ip) {
+function isRateLimited(ip, hitsMap = rateLimitHits, max = RATE_LIMIT_MAX_REQUESTS) {
   const now = Date.now();
-  const hits = (rateLimitHits.get(ip) || []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+  const hits = (hitsMap.get(ip) || []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
   hits.push(now);
-  rateLimitHits.set(ip, hits);
-  return hits.length > RATE_LIMIT_MAX_REQUESTS;
+  hitsMap.set(ip, hits);
+  return hits.length > max;
 }
+
+// Separate, stricter bucket for login/register — a shared bucket with the
+// chat widget would let heavy (legitimate) chat use crowd out someone's
+// ability to log in, and vice versa.
+const AUTH_RATE_LIMIT_MAX_REQUESTS = 10;
+const authRateLimitHits = new Map();
 
 function validateMessages(messages) {
   if (!Array.isArray(messages) || messages.length === 0) {
@@ -338,6 +345,386 @@ async function handleChat(req, res) {
       }
     }
   });
+}
+
+// ---- Users & sessions -----------------------------------------------------------
+// Real, server-verified accounts. Previously "accounts" lived entirely in each
+// visitor's own localStorage, which the server never checked — meaning
+// anyone could grant themselves admin from their browser console, or call
+// the products/rides/clubs endpoints directly (bypassing the UI's "only the
+// owner sees a Delete button" checks) to edit or delete listings that
+// weren't theirs. Every mutating request below now requires a valid session
+// token, and ownership/admin checks happen here, not just in the UI.
+
+const USERS_FILE = path.join(ROOT, 'users.json');
+const SESSIONS_FILE = path.join(ROOT, 'sessions.json');
+const AUTH_MAX_BODY_BYTES = 20_000; // plain text fields only
+const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+// Same default admin the client used to seed into localStorage (id: 1,
+// admin@bikestore.com / admin123) — kept so anyone who already knew those
+// demo credentials still gets in after this migration. Change the password
+// after first login.
+function seedDefaultUsers() {
+  return [
+    {
+      id: 1,
+      name: 'Admin',
+      email: 'admin@bikestore.com',
+      phone: '',
+      passwordHash: hashPassword('admin123'),
+      rating: 5,
+      reviews: [],
+      isAdmin: true,
+      createdAt: new Date().toISOString(),
+    },
+  ];
+}
+
+// scrypt (built into Node — no extra dependency) with a random per-user salt.
+// Stored as "salt:hash", both hex.
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.scryptSync(String(password), salt, 64).toString('hex');
+  return `${salt}:${hash}`;
+}
+
+function verifyPassword(password, stored) {
+  const [salt, hash] = String(stored || '').split(':');
+  if (!salt || !hash) return false;
+  const candidate = crypto.scryptSync(String(password), salt, 64);
+  const expected = Buffer.from(hash, 'hex');
+  // Lengths must match before timingSafeEqual (it throws otherwise) — a
+  // mismatched length just means "wrong password".
+  if (candidate.length !== expected.length) return false;
+  return crypto.timingSafeEqual(candidate, expected);
+}
+
+function loadUsersFromDisk() {
+  if (!fs.existsSync(USERS_FILE)) {
+    const seeded = seedDefaultUsers();
+    fs.writeFileSync(USERS_FILE, JSON.stringify(seeded, null, 2));
+    return seeded;
+  }
+  try {
+    const parsed = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    console.error('Error reading users.json, treating as empty:', e);
+    return [];
+  }
+}
+
+function saveUsersToDisk(users) {
+  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+}
+
+// Never send passwordHash to the client.
+function publicUser(user) {
+  if (!user) return user;
+  const { passwordHash, ...rest } = user;
+  return rest;
+}
+
+// ---- Sessions ---------------------------------------------------------------
+// token -> { userId, expiresAt } for real accounts, or
+// token -> { guestUser, expiresAt } for guest sessions (never written to
+// users.json — guests are disposable, but still need a stable identity for
+// the lifetime of their session so ownership checks work the same way).
+// Persisted to disk so a server restart/redeploy doesn't silently log
+// everyone out; still just an in-memory Map as the source of truth at
+// runtime.
+let sessions = new Map();
+
+function loadSessionsFromDisk() {
+  if (!fs.existsSync(SESSIONS_FILE)) return new Map();
+  try {
+    const parsed = JSON.parse(fs.readFileSync(SESSIONS_FILE, 'utf8'));
+    const now = Date.now();
+    return new Map((Array.isArray(parsed) ? parsed : []).filter(([, s]) => s.expiresAt > now));
+  } catch (e) {
+    console.error('Error reading sessions.json, starting with no sessions:', e);
+    return new Map();
+  }
+}
+
+function saveSessionsToDisk() {
+  fs.writeFileSync(SESSIONS_FILE, JSON.stringify([...sessions.entries()], null, 2));
+}
+
+sessions = loadSessionsFromDisk();
+
+function createSession(data) {
+  const token = crypto.randomBytes(32).toString('hex');
+  sessions.set(token, { ...data, expiresAt: Date.now() + SESSION_TTL_MS });
+  saveSessionsToDisk();
+  return token;
+}
+
+function deleteSession(token) {
+  sessions.delete(token);
+  saveSessionsToDisk();
+}
+
+// Resolves the "Authorization: Bearer <token>" header to the real,
+// server-known user (re-read from disk so a just-revoked admin flag is
+// always current) or the guest identity — or null if missing/invalid/expired.
+function getAuthUser(req) {
+  const header = req.headers['authorization'] || '';
+  const match = /^Bearer (.+)$/.exec(header);
+  if (!match) return null;
+  const token = match[1];
+  const session = sessions.get(token);
+  if (!session) return null;
+  if (session.expiresAt <= Date.now()) {
+    deleteSession(token);
+    return null;
+  }
+  if (session.guestUser) return session.guestUser;
+  const user = loadUsersFromDisk().find((u) => u.id === session.userId);
+  return user ? publicUser(user) : null;
+}
+
+function sendUnauthorized(res) {
+  sendJson(res, 401, { error: 'Sign in required.' });
+}
+
+async function handleRegister(req, res) {
+  const ip = req.socket.remoteAddress || 'unknown';
+  if (isRateLimited(ip, authRateLimitHits, AUTH_RATE_LIMIT_MAX_REQUESTS)) {
+    sendJson(res, 429, { error: 'Too many attempts — please slow down.' });
+    return;
+  }
+  let body;
+  try {
+    body = await readJsonBody(req, AUTH_MAX_BODY_BYTES);
+  } catch (e) {
+    sendJson(res, e.status || 400, { error: e.message });
+    return;
+  }
+  const name = String(body.name || '').trim();
+  const email = String(body.email || '').trim().toLowerCase();
+  const phone = String(body.phone || '').trim();
+  const password = String(body.password || '');
+  if (!name || !email || !phone || !password) {
+    sendJson(res, 400, { error: 'Name, email, phone, and password are all required.' });
+    return;
+  }
+  if (password.length < 4) {
+    sendJson(res, 400, { error: 'Password must be at least 4 characters.' });
+    return;
+  }
+  const users = loadUsersFromDisk();
+  if (users.find((u) => u.email === email)) {
+    sendJson(res, 409, { error: 'Email already registered.' });
+    return;
+  }
+  const newUser = {
+    id: Date.now(),
+    name,
+    email,
+    phone,
+    passwordHash: hashPassword(password),
+    rating: 5,
+    reviews: [],
+    isAdmin: false,
+    createdAt: new Date().toISOString(),
+  };
+  users.push(newUser);
+  saveUsersToDisk(users);
+  const token = createSession({ userId: newUser.id });
+  sendJson(res, 201, { token, user: publicUser(newUser) });
+}
+
+async function handleLogin(req, res) {
+  const ip = req.socket.remoteAddress || 'unknown';
+  if (isRateLimited(ip, authRateLimitHits, AUTH_RATE_LIMIT_MAX_REQUESTS)) {
+    sendJson(res, 429, { error: 'Too many attempts — please slow down.' });
+    return;
+  }
+  let body;
+  try {
+    body = await readJsonBody(req, AUTH_MAX_BODY_BYTES);
+  } catch (e) {
+    sendJson(res, e.status || 400, { error: e.message });
+    return;
+  }
+  const email = String(body.email || '').trim().toLowerCase();
+  const password = String(body.password || '');
+  const users = loadUsersFromDisk();
+  const user = users.find((u) => u.email === email);
+  if (!user || !verifyPassword(password, user.passwordHash)) {
+    sendJson(res, 401, { error: 'Invalid email or password.' });
+    return;
+  }
+  const token = createSession({ userId: user.id });
+  sendJson(res, 200, { token, user: publicUser(user) });
+}
+
+async function handleGuestLogin(req, res) {
+  let body = {};
+  try {
+    body = await readJsonBody(req, AUTH_MAX_BODY_BYTES);
+  } catch {
+    // A body isn't required for guest login — an empty/invalid one just
+    // means "use the default name".
+  }
+  const guestUser = {
+    id: Date.now(),
+    name: String(body.name || 'Guest').slice(0, 100),
+    email: 'guest@example.com',
+    phone: '',
+    rating: 5,
+    reviews: [],
+    isAdmin: false,
+    isGuest: true,
+  };
+  const token = createSession({ guestUser });
+  sendJson(res, 201, { token, user: guestUser });
+}
+
+async function handleLogout(req, res) {
+  const header = req.headers['authorization'] || '';
+  const match = /^Bearer (.+)$/.exec(header);
+  if (match) deleteSession(match[1]);
+  res.writeHead(204);
+  res.end();
+}
+
+async function handleMe(req, res) {
+  const user = getAuthUser(req);
+  if (!user) { sendUnauthorized(res); return; }
+  sendJson(res, 200, user);
+}
+
+async function handleListUsers(req, res) {
+  const user = getAuthUser(req);
+  if (!user) { sendUnauthorized(res); return; }
+  if (!user.isAdmin) { sendJson(res, 403, { error: 'Admin access required.' }); return; }
+  sendJson(res, 200, loadUsersFromDisk().map(publicUser));
+}
+
+async function handleUpdateUser(req, res, id) {
+  const authUser = getAuthUser(req);
+  if (!authUser) { sendUnauthorized(res); return; }
+  if (!authUser.isAdmin) { sendJson(res, 403, { error: 'Admin access required.' }); return; }
+  let body;
+  try {
+    body = await readJsonBody(req, AUTH_MAX_BODY_BYTES);
+  } catch (e) {
+    sendJson(res, e.status || 400, { error: e.message });
+    return;
+  }
+  const users = loadUsersFromDisk();
+  const idx = users.findIndex((u) => String(u.id) === String(id));
+  if (idx === -1) { sendJson(res, 404, { error: 'User not found' }); return; }
+
+  // The only thing this endpoint is for — granting/revoking admin. Anything
+  // else in the body (password, email, ...) is ignored rather than trusted.
+  if (typeof body.isAdmin === 'boolean') {
+    if (!body.isAdmin) {
+      const remainingAdmins = users.filter((u) => u.isAdmin && String(u.id) !== String(id)).length;
+      if (remainingAdmins === 0) {
+        sendJson(res, 400, { error: 'Cannot remove admin access from the only remaining admin.' });
+        return;
+      }
+    }
+    users[idx].isAdmin = body.isAdmin;
+    saveUsersToDisk(users);
+  }
+  sendJson(res, 200, publicUser(users[idx]));
+}
+
+async function handleDeleteUser(req, res, id) {
+  const authUser = getAuthUser(req);
+  if (!authUser) { sendUnauthorized(res); return; }
+  if (!authUser.isAdmin) { sendJson(res, 403, { error: 'Admin access required.' }); return; }
+  const users = loadUsersFromDisk();
+  const idx = users.findIndex((u) => String(u.id) === String(id));
+  if (idx === -1) { sendJson(res, 404, { error: 'User not found' }); return; }
+  if (users[idx].isAdmin) {
+    const remainingAdmins = users.filter((u) => u.isAdmin && String(u.id) !== String(id)).length;
+    if (remainingAdmins === 0) {
+      sendJson(res, 400, { error: 'Cannot delete the only remaining admin.' });
+      return;
+    }
+  }
+  users.splice(idx, 1);
+  saveUsersToDisk(users);
+  res.writeHead(204);
+  res.end();
+}
+
+// Step 1 of the in-app password reset (this app has no email service to
+// actually deliver a reset link, so — same as before this migration —
+// knowing the email address is the only "verification" there is). Only
+// confirms whether an account exists; the response never includes anything
+// sensitive.
+async function handleForgotPassword(req, res) {
+  let body;
+  try {
+    body = await readJsonBody(req, AUTH_MAX_BODY_BYTES);
+  } catch (e) {
+    sendJson(res, e.status || 400, { error: e.message });
+    return;
+  }
+  const email = String(body.email || '').trim().toLowerCase();
+  const user = loadUsersFromDisk().find((u) => u.email === email);
+  sendJson(res, 200, user ? { found: true, name: user.name } : { found: false });
+}
+
+async function handleResetPassword(req, res) {
+  const ip = req.socket.remoteAddress || 'unknown';
+  if (isRateLimited(ip, authRateLimitHits, AUTH_RATE_LIMIT_MAX_REQUESTS)) {
+    sendJson(res, 429, { error: 'Too many attempts — please slow down.' });
+    return;
+  }
+  let body;
+  try {
+    body = await readJsonBody(req, AUTH_MAX_BODY_BYTES);
+  } catch (e) {
+    sendJson(res, e.status || 400, { error: e.message });
+    return;
+  }
+  const email = String(body.email || '').trim().toLowerCase();
+  const newPassword = String(body.newPassword || '');
+  if (newPassword.length < 4) {
+    sendJson(res, 400, { error: 'Password must be at least 4 characters.' });
+    return;
+  }
+  const users = loadUsersFromDisk();
+  const idx = users.findIndex((u) => u.email === email);
+  if (idx === -1) { sendJson(res, 404, { error: 'Email not registered.' }); return; }
+  users[idx].passwordHash = hashPassword(newPassword);
+  saveUsersToDisk(users);
+  sendJson(res, 200, { ok: true });
+}
+
+// Looks accounts up by phone (the login identifier is email, so it can't
+// very well be recovered by asking for itself). Emails come back masked
+// ("jo**@example.com") — this is still a limited-purpose recovery flow with
+// no real proof of phone ownership, same trust level as before this
+// migration, just no longer exposing the raw email or the full user list.
+async function handleForgotUsername(req, res) {
+  let body;
+  try {
+    body = await readJsonBody(req, AUTH_MAX_BODY_BYTES);
+  } catch (e) {
+    sendJson(res, e.status || 400, { error: e.message });
+    return;
+  }
+  const phone = String(body.phone || '').trim();
+  const matches = loadUsersFromDisk().filter((u) => u.phone && u.phone === phone);
+  const emails = matches.map((u) => maskEmail(u.email));
+  sendJson(res, 200, { emails });
+}
+
+function maskEmail(email) {
+  const [local, domain] = String(email || '').split('@');
+  if (!domain) return email || '';
+  const visibleLen = Math.min(2, local.length);
+  const visible = local.slice(0, visibleLen);
+  return `${visible}${'*'.repeat(Math.max(1, local.length - visibleLen))}@${domain}`;
 }
 
 // ---- Products API -------------------------------------------------------------
@@ -483,6 +870,8 @@ async function handleGetProducts(req, res) {
 }
 
 async function handleCreateProduct(req, res) {
+  const user = getAuthUser(req);
+  if (!user) { sendUnauthorized(res); return; }
   let body;
   try {
     body = await readJsonBody(req, PRODUCT_MAX_BODY_BYTES);
@@ -492,14 +881,25 @@ async function handleCreateProduct(req, res) {
   }
   const products = loadProductsFromDisk();
   // Server assigns id/createdAt — never trust a client-supplied id, it could
-  // collide with an existing listing.
-  const newProduct = { ...body, id: Date.now(), createdAt: new Date().toISOString() };
+  // collide with an existing listing. sellerId/status are likewise always
+  // set from the authenticated user/server, not the request body — otherwise
+  // anyone could publish a listing already marked "approved" and owned by
+  // someone else.
+  const newProduct = {
+    ...body,
+    id: Date.now(),
+    createdAt: new Date().toISOString(),
+    sellerId: user.id,
+    status: 'pending',
+  };
   products.push(newProduct);
   saveProductsToDisk(products);
   sendJson(res, 201, newProduct);
 }
 
 async function handleUpdateProduct(req, res, id) {
+  const user = getAuthUser(req);
+  if (!user) { sendUnauthorized(res); return; }
   let body;
   try {
     body = await readJsonBody(req, PRODUCT_MAX_BODY_BYTES);
@@ -513,18 +913,53 @@ async function handleUpdateProduct(req, res, id) {
     sendJson(res, 404, { error: 'Product not found' });
     return;
   }
+  const product = products[idx];
+  const isOwner = String(product.sellerId) === String(user.id);
+
+  // Special case: "favorite" clicks come from any visitor, not just the
+  // owner — but only ever touch the favorites count, nothing else, and the
+  // server computes the new value itself rather than trusting a
+  // client-supplied number.
+  const isFavoriteOnly = Object.keys(body).length === 1 && 'favorites' in body;
+  if (isFavoriteOnly) {
+    products[idx] = { ...product, favorites: (product.favorites || 0) + 1 };
+    saveProductsToDisk(products);
+    sendJson(res, 200, products[idx]);
+    return;
+  }
+
+  if (!isOwner && !user.isAdmin) {
+    sendJson(res, 403, { error: 'You can only edit your own listings.' });
+    return;
+  }
+
+  // Moderation fields are admin-only — a seller PATCHing their own listing
+  // can't self-approve or clear a rejection note this way.
+  const nextBody = { ...body };
+  if (!user.isAdmin) {
+    delete nextBody.status;
+    delete nextBody.adminNotes;
+  }
+
   // Partial merge (PATCH semantics) — callers send only the fields changing
-  // (availability, moderation status, favorites count, ...).
-  products[idx] = { ...products[idx], ...body, id: products[idx].id };
+  // (availability, moderation status, ...). id/sellerId never change after
+  // creation, regardless of who's asking.
+  products[idx] = { ...product, ...nextBody, id: product.id, sellerId: product.sellerId };
   saveProductsToDisk(products);
   sendJson(res, 200, products[idx]);
 }
 
 async function handleDeleteProduct(req, res, id) {
+  const user = getAuthUser(req);
+  if (!user) { sendUnauthorized(res); return; }
   const products = loadProductsFromDisk();
   const idx = products.findIndex((p) => String(p.id) === String(id));
   if (idx === -1) {
     sendJson(res, 404, { error: 'Product not found' });
+    return;
+  }
+  if (String(products[idx].sellerId) !== String(user.id) && !user.isAdmin) {
+    sendJson(res, 403, { error: 'You can only delete your own listings.' });
     return;
   }
   products.splice(idx, 1);
@@ -652,6 +1087,8 @@ async function handleGetRides(req, res) {
 }
 
 async function handleCreateRide(req, res) {
+  const user = getAuthUser(req);
+  if (!user) { sendUnauthorized(res); return; }
   let body;
   try {
     body = await readJsonBody(req, RIDE_MAX_BODY_BYTES);
@@ -661,14 +1098,55 @@ async function handleCreateRide(req, res) {
   }
   const rides = loadRidesFromDisk();
   // Server assigns id/createdAt, same reasoning as products — never trust a
-  // client-supplied id.
-  const newRide = { ...body, id: Date.now(), createdAt: new Date().toISOString() };
+  // client-supplied id. organizerId is likewise always the authenticated
+  // user (whoever creates a ride is its organizer, by definition), and it
+  // always starts with them as the sole participant and no requests yet —
+  // otherwise a request body could forge fake pre-existing requests.
+  const newRide = {
+    ...body,
+    id: Date.now(),
+    createdAt: new Date().toISOString(),
+    organizerId: user.id,
+    organizerName: user.name,
+    participants: [{ userId: user.id, name: user.name }],
+    pendingRequests: [],
+  };
   rides.push(newRide);
   saveRidesToDisk(rides);
   sendJson(res, 201, newRide);
 }
 
+// A non-organizer is only ever allowed to touch their own entry in
+// `participants`/`pendingRequests` (join, leave, or cancel their own
+// request) — never anyone else's, and never any other field. Returns true
+// if `body` only makes changes of that shape relative to `ride`.
+function isSelfServiceRideEdit(ride, body, userId) {
+  const allowedKeys = ['participants', 'pendingRequests'];
+  for (const key of Object.keys(body)) {
+    if (!allowedKeys.includes(key)) return false;
+  }
+  for (const key of allowedKeys) {
+    if (!(key in body)) continue;
+    const before = ride[key] || [];
+    const after = body[key] || [];
+    if (!Array.isArray(after)) return false;
+    const stringify = (arr) => new Set(arr.map((e) => JSON.stringify(e)));
+    const beforeSet = stringify(before);
+    const afterSet = stringify(after);
+    const touched = [
+      ...before.filter((e) => !afterSet.has(JSON.stringify(e))),
+      ...after.filter((e) => !beforeSet.has(JSON.stringify(e))),
+    ];
+    for (const entry of touched) {
+      if (String(entry.userId) !== String(userId)) return false;
+    }
+  }
+  return true;
+}
+
 async function handleUpdateRide(req, res, id) {
+  const user = getAuthUser(req);
+  if (!user) { sendUnauthorized(res); return; }
   let body;
   try {
     body = await readJsonBody(req, RIDE_MAX_BODY_BYTES);
@@ -682,20 +1160,36 @@ async function handleUpdateRide(req, res, id) {
     sendJson(res, 404, { error: 'Ride not found' });
     return;
   }
+  const ride = rides[idx];
+  const isOrganizer = String(ride.organizerId) === String(user.id);
+
+  if (!isOrganizer && !user.isAdmin && !isSelfServiceRideEdit(ride, body, user.id)) {
+    sendJson(res, 403, {
+      error: 'You can only join, leave, or cancel your own request — only the organizer can change other details.',
+    });
+    return;
+  }
+
   // Partial merge (PATCH semantics) — the client computes the next
   // participants/pendingRequests array (join/leave/accept/reject all just
-  // send the updated array) and this merges it in, same pattern as
-  // handleUpdateProduct.
-  rides[idx] = { ...rides[idx], ...body, id: rides[idx].id };
+  // send the updated array) and this merges it in. id/organizerId never
+  // change after creation.
+  rides[idx] = { ...ride, ...body, id: ride.id, organizerId: ride.organizerId };
   saveRidesToDisk(rides);
   sendJson(res, 200, rides[idx]);
 }
 
 async function handleDeleteRide(req, res, id) {
+  const user = getAuthUser(req);
+  if (!user) { sendUnauthorized(res); return; }
   const rides = loadRidesFromDisk();
   const idx = rides.findIndex((r) => String(r.id) === String(id));
   if (idx === -1) {
     sendJson(res, 404, { error: 'Ride not found' });
+    return;
+  }
+  if (String(rides[idx].organizerId) !== String(user.id) && !user.isAdmin) {
+    sendJson(res, 403, { error: 'Only the organizer can delete this ride.' });
     return;
   }
   rides.splice(idx, 1);
@@ -763,6 +1257,8 @@ async function handleGetClubs(req, res) {
 }
 
 async function handleCreateClub(req, res) {
+  const user = getAuthUser(req);
+  if (!user) { sendUnauthorized(res); return; }
   let body;
   try {
     body = await readJsonBody(req, CLUB_MAX_BODY_BYTES);
@@ -771,13 +1267,21 @@ async function handleCreateClub(req, res) {
     return;
   }
   const clubs = loadClubsFromDisk();
-  const newClub = { ...body, id: Date.now(), createdAt: new Date().toISOString() };
+  const newClub = {
+    ...body,
+    id: Date.now(),
+    createdAt: new Date().toISOString(),
+    ownerId: user.id,
+    ownerName: user.name,
+  };
   clubs.push(newClub);
   saveClubsToDisk(clubs);
   sendJson(res, 201, newClub);
 }
 
 async function handleUpdateClub(req, res, id) {
+  const user = getAuthUser(req);
+  if (!user) { sendUnauthorized(res); return; }
   let body;
   try {
     body = await readJsonBody(req, CLUB_MAX_BODY_BYTES);
@@ -791,16 +1295,26 @@ async function handleUpdateClub(req, res, id) {
     sendJson(res, 404, { error: 'Club not found' });
     return;
   }
-  clubs[idx] = { ...clubs[idx], ...body, id: clubs[idx].id };
+  if (String(clubs[idx].ownerId) !== String(user.id) && !user.isAdmin) {
+    sendJson(res, 403, { error: 'You can only edit your own club.' });
+    return;
+  }
+  clubs[idx] = { ...clubs[idx], ...body, id: clubs[idx].id, ownerId: clubs[idx].ownerId };
   saveClubsToDisk(clubs);
   sendJson(res, 200, clubs[idx]);
 }
 
 async function handleDeleteClub(req, res, id) {
+  const user = getAuthUser(req);
+  if (!user) { sendUnauthorized(res); return; }
   const clubs = loadClubsFromDisk();
   const idx = clubs.findIndex((c) => String(c.id) === String(id));
   if (idx === -1) {
     sendJson(res, 404, { error: 'Club not found' });
+    return;
+  }
+  if (String(clubs[idx].ownerId) !== String(user.id) && !user.isAdmin) {
+    sendJson(res, 403, { error: 'You can only delete your own club.' });
     return;
   }
   clubs.splice(idx, 1);
@@ -816,6 +1330,26 @@ const server = http.createServer((req, res) => {
 
   if (req.method === 'POST' && urlPath === '/api/chat') {
     handleChat(req, res);
+    return;
+  }
+
+  if (req.method === 'POST' && urlPath === '/api/auth/register') { handleRegister(req, res); return; }
+  if (req.method === 'POST' && urlPath === '/api/auth/login') { handleLogin(req, res); return; }
+  if (req.method === 'POST' && urlPath === '/api/auth/guest') { handleGuestLogin(req, res); return; }
+  if (req.method === 'POST' && urlPath === '/api/auth/logout') { handleLogout(req, res); return; }
+  if (req.method === 'GET' && urlPath === '/api/auth/me') { handleMe(req, res); return; }
+  if (req.method === 'GET' && urlPath === '/api/auth/users') { handleListUsers(req, res); return; }
+  if (req.method === 'POST' && urlPath === '/api/auth/forgot-password') { handleForgotPassword(req, res); return; }
+  if (req.method === 'POST' && urlPath === '/api/auth/reset-password') { handleResetPassword(req, res); return; }
+  if (req.method === 'POST' && urlPath === '/api/auth/forgot-username') { handleForgotUsername(req, res); return; }
+
+  const userMatch = urlPath.match(/^\/api\/auth\/users\/([^/]+)$/);
+  if (userMatch) {
+    const id = userMatch[1];
+    if (req.method === 'PATCH') { handleUpdateUser(req, res, id); return; }
+    if (req.method === 'DELETE') { handleDeleteUser(req, res, id); return; }
+    res.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('405 Method Not Allowed');
     return;
   }
 

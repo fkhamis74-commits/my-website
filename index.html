@@ -5412,6 +5412,12 @@
     }
 
     // ===== GLOBAL STATE =====
+    // Session token from the server (server.js /api/auth/*) — accounts,
+    // passwords, and admin rights are now verified server-side instead of
+    // living only in this browser's localStorage. currentUser below is kept
+    // as a client-side cache for fast rendering, but every mutating request
+    // sends this token and the server is the actual source of truth.
+    let authToken = null;
     let currentUser = null;
     let currentLanguage = 'ar';
     // Alias requested by user; kept in sync with currentLanguage.
@@ -5456,9 +5462,37 @@
     let clubs = [];
     let clubsLoadError = false;
 
+    // Merged into a fetch() call's headers for every request that needs to
+    // identify who's asking — every product/ride/club create/update/delete,
+    // plus the admin-only user-management endpoints. A GET on public data
+    // (loadProducts/loadRides/loadClubs) doesn't need this.
+    function authHeaders() {
+      return authToken ? { 'Authorization': 'Bearer ' + authToken } : {};
+    }
+
     // ===== INITIALIZATION =====
     async function initApp() {
       loadData();
+      // A token from a previous visit — confirm it's still valid (and pick
+      // up any server-side changes, like isAdmin being revoked) rather than
+      // trusting the cached copy blindly. On a network error, fall back to
+      // the cached user optimistically; any mutating request will get a
+      // proper 401 later if the token really is bad.
+      if (authToken) {
+        try {
+          const res = await fetch(`${API_BASE}/api/auth/me`, { headers: authHeaders() });
+          if (res.ok) {
+            currentUser = await res.json();
+          } else if (res.status === 401) {
+            authToken = null;
+            currentUser = null;
+            localStorage.removeItem('bikeStoreToken');
+            localStorage.removeItem('bikeStoreCurrentUser');
+          }
+        } catch (e) {
+          console.error('Session check failed, using cached session:', e);
+        }
+      }
       await loadProducts();
       applyLanguage(currentLanguage);
       checkAdmin();
@@ -5545,29 +5579,17 @@
 
     function loadData() {
       try {
-        const userData = localStorage.getItem('bikeStoreUsers');
         const messagesData = localStorage.getItem('bikeStoreMessages');
         const conversationsData = localStorage.getItem('bikeStoreConversations');
         const currentUserData = localStorage.getItem('bikeStoreCurrentUser');
         const languageData = localStorage.getItem('bikeStoreLanguage');
         const darkModeData = localStorage.getItem('bikeStoreDarkMode');
 
-        users = userData ? JSON.parse(userData) : [];
-        if (!Array.isArray(users) || users.length === 0) {
-          // Seed a default admin account so the admin panel is reachable.
-          // Change this password after first login.
-          users = [{
-            id: 1,
-            name: 'Admin',
-            email: 'admin@bikestore.com',
-            phone: '',
-            password: 'admin123',
-            rating: 5,
-            reviews: [],
-            isAdmin: true
-          }];
-          localStorage.setItem('bikeStoreUsers', JSON.stringify(users));
-        }
+        // Accounts themselves now live server-side (server.js /api/auth/*) —
+        // `authToken` is the session to re-validate on load (see initApp),
+        // and this cached `currentUser` is just an optimistic first paint
+        // until that check comes back.
+        authToken = localStorage.getItem('bikeStoreToken') || null;
         messages = messagesData ? JSON.parse(messagesData) : {};
         conversations = conversationsData ? JSON.parse(conversationsData) : {};
         currentUser = currentUserData ? JSON.parse(currentUserData) : null;
@@ -5583,14 +5605,16 @@
       }
     }
 
-    // Products are no longer part of this — they're persisted server-side via
-    // the /api/products endpoints (see loadProducts() and each product
-    // mutation function) as soon as they change, not batched here.
+    // Products/rides/clubs/accounts are no longer part of this — they're
+    // persisted server-side as soon as they change, not batched here. What's
+    // left is genuinely per-device state: the message cache, and a local
+    // copy of the session for fast reloads.
     function saveData() {
       try {
-        localStorage.setItem('bikeStoreUsers', JSON.stringify(users));
         localStorage.setItem('bikeStoreMessages', JSON.stringify(messages));
         localStorage.setItem('bikeStoreConversations', JSON.stringify(conversations));
+        if (authToken) localStorage.setItem('bikeStoreToken', authToken);
+        else localStorage.removeItem('bikeStoreToken');
         localStorage.setItem('bikeStoreCurrentUser', JSON.stringify(currentUser));
         localStorage.setItem('bikeStoreLanguage', currentLanguage);
       } catch (e) {
@@ -5602,7 +5626,16 @@
     }
 
     // ===== AUTHENTICATION =====
-    function handleLogin() {
+    // All three flows below (login/register/guest) share the same shape:
+    // call the server, and on success store the session token + user it
+    // hands back before re-running initApp() to paint the logged-in state.
+    function applySession(data) {
+      authToken = data.token;
+      currentUser = data.user;
+      saveData();
+    }
+
+    async function handleLogin() {
       const email = document.getElementById('login-email').value;
       const password = document.getElementById('login-password').value;
 
@@ -5611,17 +5644,26 @@
         return;
       }
 
-      const user = users.find(u => u.email === email && u.password === password);
-      if (user) {
-        currentUser = user;
-        saveData();
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+        if (!res.ok) {
+          if (res.status === 401) alert(t('invalidCredentialsAlert', 'Invalid email or password'));
+          else throw new Error(`HTTP ${res.status}`);
+          return;
+        }
+        applySession(await res.json());
         initApp();
-      } else {
-        alert(t('invalidCredentialsAlert', 'Invalid email or password'));
+      } catch (e) {
+        console.error('Login failed:', e);
+        alert(currentLanguage === 'ar' ? 'تعذّر تسجيل الدخول. تأكد من تشغيل الخادم.' : 'Could not log in. Check the server is running.');
       }
     }
 
-    function handleRegister() {
+    async function handleRegister() {
       const name = document.getElementById('register-name').value;
       const email = document.getElementById('register-email').value;
       const phone = document.getElementById('register-phone').value;
@@ -5632,30 +5674,33 @@
         return;
       }
 
-      if (users.find(u => u.email === email)) {
-        alert(t('emailRegisteredAlert', 'Email already registered'));
-        return;
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, phone, password }),
+        });
+        if (!res.ok) {
+          if (res.status === 409) alert(t('emailRegisteredAlert', 'Email already registered'));
+          else if (res.status === 400) alert((await res.json()).error);
+          else throw new Error(`HTTP ${res.status}`);
+          return;
+        }
+        applySession(await res.json());
+        initApp();
+      } catch (e) {
+        console.error('Registration failed:', e);
+        alert(currentLanguage === 'ar' ? 'تعذّر إنشاء الحساب. تأكد من تشغيل الخادم.' : 'Could not create the account. Check the server is running.');
       }
-
-      const newUser = {
-        id: Date.now(),
-        name,
-        email,
-        phone,
-        password,
-        rating: 5,
-        reviews: [],
-        isAdmin: false
-      };
-
-      users.push(newUser);
-      currentUser = newUser;
-      saveData();
-      initApp();
     }
 
     function handleLogout() {
+      // Best-effort — invalidate the session server-side too, but don't let
+      // a network hiccup block logging out locally.
+      if (authToken) fetch(`${API_BASE}/api/auth/logout`, { method: 'POST', headers: authHeaders() }).catch(() => {});
+      authToken = null;
       currentUser = null;
+      localStorage.removeItem('bikeStoreToken');
       localStorage.removeItem('bikeStoreCurrentUser');
       location.reload();
     }
@@ -5676,9 +5721,11 @@
 
     // Guest exits and goes to registration
     function exitGuestAndRegister() {
+      authToken = null;
       currentUser = null;
+      localStorage.removeItem('bikeStoreToken');
       localStorage.removeItem('bikeStoreCurrentUser');
-      
+
       document.getElementById('app').style.display = 'none';
       document.getElementById('page-auth').classList.add('active');
       document.getElementById('auth-choice').style.display = 'none';
@@ -5695,29 +5742,32 @@
       document.getElementById('register-password').value = '';
     }
 
-    // Guest Login
-    function handleGuestLogin() {
-      const guestUser = {
-        id: Date.now(),
-        name: t('guestName', 'Guest'),
-        email: 'guest@example.com',
-        phone: '+966000000000',
-        password: '',
-        rating: 5,
-        reviews: [],
-        isAdmin: false,
-        isGuest: true
-      };
-
-      currentUser = guestUser;
-      saveData();
-      initApp();
+    // Guest Login — still creates a real server session (server.js
+    // /api/auth/guest) rather than a fully local, unverified identity, so a
+    // guest's own listings/ride requests are properly authenticated too.
+    // It's just never written to users.json — disposable, not a real account.
+    async function handleGuestLogin() {
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/guest`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: t('guestName', 'Guest') }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        applySession(await res.json());
+        initApp();
+      } catch (e) {
+        console.error('Guest login failed:', e);
+        alert(currentLanguage === 'ar' ? 'تعذّر الدخول كزائر. تأكد من تشغيل الخادم.' : 'Could not continue as guest. Check the server is running.');
+      }
     }
 
     // Forgot Password Recovery — a two-step, in-app reset since this app has no backend/email
-    // service to actually deliver a reset link. Step 1 verifies the email; step 2 sets a new
-    // password directly.
-    function handleForgotPassword() {
+    // service to actually deliver a reset link (server.js /api/auth/forgot-password and
+    // /api/auth/reset-password — knowing the email is still the only "verification" there is,
+    // same trust level as before, just hashed server-side now instead of overwritten in
+    // localStorage). Step 1 verifies the email; step 2 sets a new password directly.
+    async function handleForgotPassword() {
       if (!forgotPasswordUser) {
         const email = document.getElementById('forgot-email').value.trim();
         if (!email) {
@@ -5725,14 +5775,27 @@
           return;
         }
 
-        const user = users.find(u => u.email === email);
-        if (!user) {
+        let data;
+        try {
+          const res = await fetch(`${API_BASE}/api/auth/forgot-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email }),
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          data = await res.json();
+        } catch (e) {
+          console.error('Forgot-password lookup failed:', e);
+          alert(currentLanguage === 'ar' ? 'تعذّر الاتصال بالخادم.' : 'Could not reach the server.');
+          return;
+        }
+        if (!data.found) {
           alert(t('emailNotRegisteredAlert', 'Email not registered'));
           return;
         }
 
         // Step 1 passed: lock the email in and reveal the new-password fields.
-        forgotPasswordUser = user;
+        forgotPasswordUser = { email };
         document.getElementById('forgot-email').disabled = true;
         document.getElementById('forgotPasswordStep').classList.remove('is-hidden');
         document.getElementById('forgotPasswordActionBtn').textContent = t('resetPasswordButton', 'Update Password');
@@ -5753,13 +5816,20 @@
         return;
       }
 
-      const idx = users.findIndex(u => u.id === forgotPasswordUser.id);
-      if (idx !== -1) {
-        users[idx].password = newPassword;
-        saveData();
+      const recoveredEmail = forgotPasswordUser.email;
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/reset-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: recoveredEmail, newPassword }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      } catch (e) {
+        console.error('Password reset failed:', e);
+        alert(currentLanguage === 'ar' ? 'تعذّر تحديث كلمة المرور.' : 'Could not update the password.');
+        return;
       }
 
-      const recoveredEmail = forgotPasswordUser.email;
       alert(t('passwordResetSuccessAlert', 'Password updated successfully. You can now log in.'));
       resetForgotPasswordForm();
       showAuthForm('login');
@@ -5782,32 +5852,37 @@
 
     // Forgot Username (email) Recovery — looks accounts up by phone number, since email is
     // the login identifier here and can't very well be recovered by asking for itself.
-    function handleForgotUsername() {
+    // server.js does the lookup and masking (e.g. "jo**@example.com") so the raw email and
+    // the rest of the user list are never sent to the browser.
+    async function handleForgotUsername() {
       const phone = document.getElementById('forgot-username-phone').value.trim();
       if (!phone) {
         alert(t('enterPhoneAlert', 'Please enter your phone number'));
         return;
       }
 
-      const matches = users.filter(u => u.phone && u.phone === phone);
-      if (matches.length === 0) {
+      let data;
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/forgot-username`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        data = await res.json();
+      } catch (e) {
+        console.error('Forgot-username lookup failed:', e);
+        alert(currentLanguage === 'ar' ? 'تعذّر الاتصال بالخادم.' : 'Could not reach the server.');
+        return;
+      }
+
+      if (!data.emails || data.emails.length === 0) {
         alert(t('phoneNotRegisteredAlert', 'No account found with this phone number'));
         return;
       }
 
-      const emailList = matches.map(u => maskEmail(u.email)).join('\n');
-      alert(`${t('foundEmailAlertPrefix', 'The email linked to your account is')}:\n${emailList}`);
+      alert(`${t('foundEmailAlertPrefix', 'The email linked to your account is')}:\n${data.emails.join('\n')}`);
       document.getElementById('forgot-username-phone').value = '';
-    }
-
-    // Partially masks an email for display (e.g. "jo**@example.com") so recovery doesn't
-    // fully expose the address to whoever is holding the phone.
-    function maskEmail(email) {
-      const [local, domain] = String(email || '').split('@');
-      if (!domain) return email || '';
-      const visibleLen = Math.min(2, local.length);
-      const visible = local.slice(0, visibleLen);
-      return `${visible}${'*'.repeat(Math.max(1, local.length - visibleLen))}@${domain}`;
     }
 
     // ===== LANGUAGE & THEME =====
@@ -6397,7 +6472,7 @@
       try {
         const res = await fetch(`${API_BASE}/api/products`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
           body: JSON.stringify(newProductPayload),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -6710,7 +6785,7 @@
       try {
         const res = await fetch(`${API_BASE}/api/products/${productId}`, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
           body: JSON.stringify({ favorites: newCount }),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -7138,7 +7213,7 @@
       try {
         const res = await fetch(`${API_BASE}/api/rides`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
           body: JSON.stringify(newRide),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -7253,7 +7328,7 @@
       try {
         const res = await fetch(`${API_BASE}/api/rides/${rideId}`, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
           body: JSON.stringify(partialUpdate),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -7344,10 +7419,10 @@
       container.innerHTML = `<div class="products-grid">${clubs.map(createClubCard).join('')}</div>`;
     }
 
-    // Delete button only renders for the club's own owner — same
-    // client-trust ownership model already used for products/rides
-    // (no server-side identity check either, consistent with the rest of
-    // this app's security boundaries).
+    // Delete button only renders for the club's own owner — just UI
+    // convenience though; the server (handleDeleteClub in server.js)
+    // independently checks ownerId/isAdmin itself and would reject the
+    // request even if this check were bypassed.
     function createClubCard(club) {
       const isOwner = !!(currentUser && club.ownerId === currentUser.id);
       const deleteBtn = isOwner
@@ -7404,7 +7479,7 @@
       try {
         const res = await fetch(`${API_BASE}/api/clubs`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
           body: JSON.stringify(newClub),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -7435,7 +7510,7 @@
     async function deleteClub(id) {
       if (!confirm(t('clubsDeleteConfirm', 'Delete this club?'))) return;
       try {
-        const res = await fetch(`${API_BASE}/api/clubs/${id}`, { method: 'DELETE' });
+        const res = await fetch(`${API_BASE}/api/clubs/${id}`, { method: 'DELETE', headers: authHeaders() });
         if (!res.ok && res.status !== 404) throw new Error(`HTTP ${res.status}`);
         await loadClubs();
       } catch (e) {
@@ -7527,7 +7602,7 @@
       try {
         const res = await fetch(`${API_BASE}/api/products/${productId}`, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
           body: JSON.stringify({ availability }),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -7544,7 +7619,7 @@
     async function deleteMyProduct(productId) {
       if (!confirm(t('deleteProductConfirm', 'Delete this product?'))) return;
       try {
-        const res = await fetch(`${API_BASE}/api/products/${productId}`, { method: 'DELETE' });
+        const res = await fetch(`${API_BASE}/api/products/${productId}`, { method: 'DELETE', headers: authHeaders() });
         if (!res.ok && res.status !== 404) throw new Error(`HTTP ${res.status}`);
         await loadProducts();
       } catch (e) {
@@ -7561,7 +7636,23 @@
     }
 
     // ===== ADMIN =====
-    function loadAdminData() {
+    // Admin-only, server-verified list (GET /api/auth/users) — replaces the
+    // old per-browser localStorage `users` array, which each visitor only
+    // ever had a partial/stale copy of anyway (accounts created on a
+    // different device simply weren't in it).
+    async function loadUsers() {
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/users`, { headers: authHeaders() });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        users = await res.json();
+      } catch (e) {
+        console.error('Error loading users:', e);
+        users = [];
+      }
+    }
+
+    async function loadAdminData() {
+      await loadUsers();
       const usersTable = document.getElementById('usersTable');
       const productsTable = document.getElementById('productsTable');
 
@@ -7631,7 +7722,7 @@
       try {
         const res = await fetch(`${API_BASE}/api/products/${productId}`, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
           body: JSON.stringify({ status: 'approved', adminNotes: '' }),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -7664,7 +7755,7 @@
       try {
         const res = await fetch(`${API_BASE}/api/products/${productId}`, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
           body: JSON.stringify({ status: 'rejected', adminNotes: notes }),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -7687,41 +7778,56 @@
 
     async function deleteUser(userId) {
       if (!confirm(t('areYouSure', 'Are you sure?'))) return;
-      users = users.filter(u => u.id !== userId);
-      const theirProducts = products.filter(p => p.sellerId === userId);
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/users/${userId}`, { method: 'DELETE', headers: authHeaders() });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          alert(data.error || (currentLanguage === 'ar' ? 'تعذّر حذف المستخدم.' : 'Could not delete the user.'));
+          return;
+        }
+      } catch (e) {
+        console.error('Error deleting user:', e);
+        alert(currentLanguage === 'ar' ? 'تعذّر حذف المستخدم.' : 'Could not delete the user.');
+        return;
+      }
       // Best-effort cascade — if one delete fails the others still go
-      // through rather than leaving the whole operation half-done.
+      // through rather than leaving the whole operation half-done. Admin
+      // auth on each product delete is implied by the fact this whole
+      // function is admin-only.
+      const theirProducts = products.filter(p => p.sellerId === userId);
       await Promise.allSettled(theirProducts.map(p =>
-        fetch(`${API_BASE}/api/products/${p.id}`, { method: 'DELETE' })
+        fetch(`${API_BASE}/api/products/${p.id}`, { method: 'DELETE', headers: authHeaders() })
       ));
       await loadProducts();
-      saveData();
       loadAdminData();
     }
 
     // Grants or revokes admin/management rights for a user. This is the only in-app way to
     // create a new admin — management stays gated to isAdmin (see checkAdmin()), and only an
-    // existing admin can reach this table to extend that permission to someone else.
-    function toggleUserAdmin(userId) {
-      const idx = users.findIndex(u => u.id === userId);
-      if (idx === -1) return;
-
-      const targetUser = users[idx];
+    // existing admin can reach this table to extend that permission to someone else. The server
+    // (handleUpdateUser) independently re-checks isAdmin and the last-admin rule too.
+    async function toggleUserAdmin(userId) {
+      const targetUser = users.find(u => u.id === userId);
+      if (!targetUser) return;
       const grantingAdmin = !targetUser.isAdmin;
-
-      if (!grantingAdmin) {
-        // Refuse to strip the last admin — that would lock everyone out of this page.
-        const remainingAdmins = users.filter(u => u.isAdmin && u.id !== userId).length;
-        if (remainingAdmins === 0) {
-          alert(t('lastAdminAlert', 'Cannot remove admin access from the only remaining admin.'));
-          return;
-        }
-      }
-
       if (!confirm(t('areYouSure', 'Are you sure?'))) return;
 
-      targetUser.isAdmin = grantingAdmin;
-      saveData();
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/users/${userId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
+          body: JSON.stringify({ isAdmin: grantingAdmin }),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          alert(data.error || (currentLanguage === 'ar' ? 'تعذّر تحديث الصلاحية.' : 'Could not update the role.'));
+          return;
+        }
+      } catch (e) {
+        console.error('Error updating admin role:', e);
+        alert(currentLanguage === 'ar' ? 'تعذّر تحديث الصلاحية.' : 'Could not update the role.');
+        return;
+      }
 
       // If the affected account is the one currently signed in, keep the live session in sync
       // (e.g. an admin revoking their own access loses the admin nav/page immediately).
@@ -7738,7 +7844,7 @@
     async function deleteProduct(productId) {
       if (!confirm(t('areYouSure', 'Are you sure?'))) return;
       try {
-        const res = await fetch(`${API_BASE}/api/products/${productId}`, { method: 'DELETE' });
+        const res = await fetch(`${API_BASE}/api/products/${productId}`, { method: 'DELETE', headers: authHeaders() });
         if (!res.ok && res.status !== 404) throw new Error(`HTTP ${res.status}`);
         await loadProducts();
       } catch (e) {
