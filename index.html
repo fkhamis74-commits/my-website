@@ -846,6 +846,30 @@
       width: 100%;
     }
 
+    .auth-legal-links {
+      margin-top: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .auth-legal-link {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.8rem;
+      text-decoration: underline;
+      padding: 4px;
+    }
+
+    .auth-legal-link:hover {
+      color: var(--accent);
+    }
+
     /* Inventory Page */
     .view-toggles {
       display: flex;
@@ -1390,6 +1414,41 @@
 
     .delete-btn:hover {
       background: #991b1b;
+    }
+
+    .danger-zone {
+      margin-top: 40px;
+      padding: 20px;
+      border: 1px solid #FCA5A5;
+      border-radius: 12px;
+      background: rgba(220, 38, 38, 0.05);
+    }
+
+    .danger-zone h3 {
+      margin: 0 0 8px;
+      color: #dc2626;
+      font-size: 1rem;
+    }
+
+    .danger-zone p {
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .btn-danger-outline {
+      padding: 10px 18px;
+      background: transparent;
+      color: #dc2626;
+      border: 1.5px solid #dc2626;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .btn-danger-outline:hover {
+      background: #dc2626;
+      color: white;
     }
 
     .role-badge {
@@ -3375,6 +3434,15 @@
         <button class="auth-back-btn" onclick="showAuthForm('choice')" data-i18n="backButton">العودة</button>
       </div>
     </div>
+
+    <!-- Reachable before login/guest, not just from the footer post-login —
+         a visitor deciding whether to sign up (and app-store review) needs
+         to be able to read these without an account first. -->
+    <div class="auth-legal-links">
+      <button class="auth-legal-link" onclick="openLegalModal('terms')" data-i18n="footerTermsLink">الشروط والأحكام</button>
+      <span aria-hidden="true">·</span>
+      <button class="auth-legal-link" onclick="openLegalModal('privacy')" data-i18n="footerPrivacyLink">سياسة الخصوصية</button>
+    </div>
   </div>
 
   <!-- Main App -->
@@ -3909,6 +3977,17 @@
         <div id="myProductsContainer">
           <!-- User's products will be rendered here -->
         </div>
+
+        <!-- Kept separate from Edit Profile above (not right next to
+             common actions) and requires typing to confirm — this is a
+             permanent, cascading delete (account + every listing/ride/club
+             owned). Guests don't get this: leaving is just logging out,
+             there's no account to delete. -->
+        <div class="danger-zone" id="deleteAccountSection">
+          <h3 data-i18n="dangerZoneTitle">منطقة الخطر</h3>
+          <p data-i18n="deleteAccountDesc">حذف حسابك نهائي ولا يمكن التراجع عنه — سيُحذف حسابك وكل إعلاناتك ورحلاتك ونواديك المرتبطة به.</p>
+          <button class="btn-danger-outline" onclick="deleteMyAccount()" data-i18n="deleteAccountButton">حذف حسابي نهائيًا</button>
+        </div>
       </div>
     </div>
 
@@ -4251,18 +4330,6 @@
       </div>
     </footer>
 
-    <!-- Legal Modal (Terms / Privacy) -->
-    <div class="modal-overlay" id="legalModal">
-      <div class="modal-box" style="max-width: 640px;">
-        <button class="modal-close" onclick="closeLegalModal()" title="إغلاق" aria-label="إغلاق" data-i18n-title="modalCloseTitle" data-i18n-aria-label="modalCloseTitle">✕</button>
-        <div class="legal-modal-header" id="legalModalTitle"></div>
-        <div class="legal-modal-body" id="legalModalContent"></div>
-        <div class="legal-modal-footer">
-          <button class="btn btn-auto" onclick="closeLegalModal()" data-i18n="legalCloseButton">موافق وإغلاق</button>
-        </div>
-      </div>
-    </div>
-
     <!-- Bike Detail Modal -->
     <div class="modal-overlay" id="bikeModal">
       <div class="modal-box">
@@ -4390,6 +4457,22 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- Legal Modal (Terms / Privacy) — deliberately a sibling of #app (not
+       nested inside it), so it's reachable from the login/guest-choice
+       screen too, before #app is ever shown. App-store review (and any
+       visitor deciding whether to sign up) needs to be able to read this
+       without logging in first. -->
+  <div class="modal-overlay" id="legalModal">
+    <div class="modal-box" style="max-width: 640px;">
+      <button class="modal-close" onclick="closeLegalModal()" title="إغلاق" aria-label="إغلاق" data-i18n-title="modalCloseTitle" data-i18n-aria-label="modalCloseTitle">✕</button>
+      <div class="legal-modal-header" id="legalModalTitle"></div>
+      <div class="legal-modal-body" id="legalModalContent"></div>
+      <div class="legal-modal-footer">
+        <button class="btn btn-auto" onclick="closeLegalModal()" data-i18n="legalCloseButton">موافق وإغلاق</button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -4582,7 +4665,15 @@
             '<h4>3. مشاركة البيانات</h4>' +
             '<p>لا نبيع بياناتك ولا نشاركها مع أي جهة خارجية لأغراض تسويقية. بياناتك تبقى ضمن نطاق الموقع فقط.</p>' +
             '<h4>4. المساعد الذكي</h4>' +
-            '<p>عند استخدامك ميزة الدردشة الذكية، تُرسل رسائلك إلى مزوّد خدمة الذكاء الاصطناعي (Anthropic) لغرض توليد الرد فقط.</p>',
+            '<p>عند استخدامك ميزة الدردشة الذكية، تُرسل رسائلك إلى مزوّد خدمة الذكاء الاصطناعي (Anthropic) لغرض توليد الرد فقط.</p>' +
+            '<h4>5. التخزين المحلي بالمتصفح/التطبيق</h4>' +
+            '<p>نستخدم التخزين المحلي (localStorage) على جهازك لحفظ رسائلك مع البائعين/المشترين وتفضيلات العرض (اللغة، الوضع الليلي) — هذي البيانات تبقى على جهازك فقط وما تُرسل لأي سيرفر.</p>' +
+            '<h4>6. الاحتفاظ بالبيانات وحذف الحساب</h4>' +
+            '<p>نحتفظ ببيانات حسابك طالما الحساب فعّال. تقدر تحذف حسابك نهائيًا في أي وقت من صفحة "ملفي الشخصي" ← "منطقة الخطر" — هذا يحذف حسابك وكل إعلاناتك ورحلاتك ونواديك بشكل دائم ولا يمكن التراجع عنه.</p>' +
+            '<h4>7. خصوصية الأطفال</h4>' +
+            '<p>هذا الموقع غير موجّه للأطفال دون 13 سنة، وما نجمع بيانات نعرف إنها لطفل دون هذا السن عن قصد.</p>' +
+            '<h4>8. تواصل معنا</h4>' +
+            '<p>لأي استفسار متعلق بالخصوصية أو بياناتك، تواصل معنا عبر: pedalexbikes@gmail.com</p>',
         },
         footerTagline: 'منصة إعلانات مبوبة مستقلة للدراجات الهوائية في الإمارات.',
         footerTermsLink: 'الشروط والأحكام',
@@ -4854,6 +4945,11 @@
         adminNoteLabel: 'ملاحظة الإدارة',
         deleteProductConfirm: 'هل تريد حذف هذا المنتج؟',
         editSoonAlert: 'سيتم إضافة خاصية التعديل قريباً',
+        dangerZoneTitle: 'منطقة الخطر',
+        deleteAccountDesc: 'حذف حسابك نهائي ولا يمكن التراجع عنه — سيُحذف حسابك وكل إعلاناتك ورحلاتك ونواديك المرتبطة به.',
+        deleteAccountButton: 'حذف حسابي نهائيًا',
+        deleteAccountConfirm: 'حذف حسابك نهائيًا؟ هذا بيحذف كل إعلاناتك ورحلاتك ونواديك أيضًا، ولا يمكن التراجع.',
+        deleteAccountSuccess: 'تم حذف حسابك.',
         noPendingProducts: 'لا توجد منتجات بانتظار المراجعة 🎉',
         sizeGuideTitle: 'دليل المقاسات',
         sizeGuideSubtitle: 'اعرف المقاس المناسب لطولك قبل الشراء',
@@ -5068,7 +5164,15 @@
             '<h4>3. Data sharing</h4>' +
             '<p>We do not sell your data or share it with any third party for marketing purposes. Your data stays within the site.</p>' +
             '<h4>4. The AI assistant</h4>' +
-            '<p>When you use the chat assistant, your messages are sent to our AI provider (Anthropic) solely to generate a reply.</p>',
+            '<p>When you use the chat assistant, your messages are sent to our AI provider (Anthropic) solely to generate a reply.</p>' +
+            '<h4>5. Local storage</h4>' +
+            '<p>We use your browser/app\'s local storage to keep your messages with buyers/sellers and your display preferences (language, dark mode) on your own device — this data stays on your device and is never sent to any server.</p>' +
+            '<h4>6. Data retention & account deletion</h4>' +
+            '<p>We keep your account data for as long as your account is active. You can permanently delete your account at any time from "My Profile" → "Danger Zone" — this permanently deletes your account and every listing, ride, and club you own, and cannot be undone.</p>' +
+            '<h4>7. Children\'s privacy</h4>' +
+            '<p>This site is not directed at children under 13, and we do not knowingly collect data from anyone we know to be under that age.</p>' +
+            '<h4>8. Contact us</h4>' +
+            '<p>For any privacy question or data request, reach us at: pedalexbikes@gmail.com</p>',
         },
         footerTagline: 'An independent classifieds platform for bikes in the UAE.',
         footerTermsLink: 'Terms & Conditions',
@@ -5340,6 +5444,11 @@
         adminNoteLabel: 'Admin note',
         deleteProductConfirm: 'Delete this product?',
         editSoonAlert: 'Edit feature coming soon',
+        dangerZoneTitle: 'Danger Zone',
+        deleteAccountDesc: 'Deleting your account is permanent and cannot be undone — your account, and every listing, ride, and club owned by it, will be deleted.',
+        deleteAccountButton: 'Delete My Account Permanently',
+        deleteAccountConfirm: 'Delete your account permanently? This also deletes all your listings, rides, and clubs, and cannot be undone.',
+        deleteAccountSuccess: 'Your account has been deleted.',
         noPendingProducts: 'No products pending review 🎉',
         sizeGuideTitle: 'Size Guide',
         sizeGuideSubtitle: 'Find the right bike size for your height before buying',
@@ -7528,6 +7637,10 @@
       document.getElementById('displayPhone').textContent = currentUser.phone;
       document.getElementById('userEmail').textContent = currentUser.email;
 
+      // Guests have no persisted account to delete — logging out already
+      // does the equivalent thing for them.
+      document.getElementById('deleteAccountSection').classList.toggle('is-hidden', !!currentUser.isGuest);
+
       // Rating summary (reflects currentUser.rating / reviews once a review flow writes to them).
       const userReviews = currentUser.reviews || [];
       const ratingValue = Math.max(0, Math.min(5, Math.round(currentUser.rating || 5)));
@@ -7633,6 +7746,36 @@
 
     function editProfile() {
       alert(t('editSoonAlert', 'Edit feature coming soon'));
+    }
+
+    // Permanently deletes the signed-in account (and, server-side, every
+    // listing/ride/club owned by it — see handleDeleteMe in server.js).
+    // Required for app-store compliance (Apple Guideline 5.1.1(v): any app
+    // that lets someone create an account must also let them delete it, in
+    // the app itself, not just by emailing support).
+    async function deleteMyAccount() {
+      if (!currentUser || currentUser.isGuest) return;
+      if (!confirm(t('deleteAccountConfirm', 'Delete your account permanently? This also deletes all your listings, rides, and clubs, and cannot be undone.'))) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/me`, { method: 'DELETE', headers: authHeaders() });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          alert(data.error || (currentLanguage === 'ar' ? 'تعذّر حذف الحساب.' : 'Could not delete the account.'));
+          return;
+        }
+      } catch (e) {
+        console.error('Error deleting account:', e);
+        alert(currentLanguage === 'ar' ? 'تعذّر حذف الحساب.' : 'Could not delete the account.');
+        return;
+      }
+
+      authToken = null;
+      currentUser = null;
+      localStorage.removeItem('bikeStoreToken');
+      localStorage.removeItem('bikeStoreCurrentUser');
+      alert(t('deleteAccountSuccess', 'Your account has been deleted.'));
+      location.reload();
     }
 
     // ===== ADMIN =====

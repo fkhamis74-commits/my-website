@@ -609,6 +609,56 @@ async function handleMe(req, res) {
   sendJson(res, 200, user);
 }
 
+// Self-service account deletion — required for app-store compliance (Apple
+// Guideline 5.1.1(v): any app that lets someone create an account must also
+// let them delete it in the app, not just by emailing support). Cascades to
+// every listing/ride/club this account owns, same as the admin-only
+// handleDeleteUser, plus its own sessions.
+async function handleDeleteMe(req, res) {
+  const user = getAuthUser(req);
+  if (!user) { sendUnauthorized(res); return; }
+  if (user.isGuest) {
+    // Nothing persisted to delete — just drop the session like logout.
+    const header = req.headers['authorization'] || '';
+    const match = /^Bearer (.+)$/.exec(header);
+    if (match) deleteSession(match[1]);
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  const users = loadUsersFromDisk();
+  const idx = users.findIndex((u) => u.id === user.id);
+  if (idx === -1) { sendJson(res, 404, { error: 'Account not found.' }); return; }
+  if (users[idx].isAdmin) {
+    const remainingAdmins = users.filter((u) => u.isAdmin && u.id !== user.id).length;
+    if (remainingAdmins === 0) {
+      sendJson(res, 400, { error: 'You are the only remaining admin — grant admin to someone else before deleting this account.' });
+      return;
+    }
+  }
+
+  users.splice(idx, 1);
+  saveUsersToDisk(users);
+
+  // Drop every session for this account, not just the one making this
+  // request — a deleted account shouldn't stay "logged in" anywhere else.
+  for (const [token, session] of sessions.entries()) {
+    if (session.userId === user.id) sessions.delete(token);
+  }
+  saveSessionsToDisk();
+
+  const products = loadProductsFromDisk().filter((p) => String(p.sellerId) !== String(user.id));
+  saveProductsToDisk(products);
+  const rides = loadRidesFromDisk().filter((r) => String(r.organizerId) !== String(user.id));
+  saveRidesToDisk(rides);
+  const clubs = loadClubsFromDisk().filter((c) => String(c.ownerId) !== String(user.id));
+  saveClubsToDisk(clubs);
+
+  res.writeHead(204);
+  res.end();
+}
+
 async function handleListUsers(req, res) {
   const user = getAuthUser(req);
   if (!user) { sendUnauthorized(res); return; }
@@ -1387,6 +1437,7 @@ const server = http.createServer((req, res) => {
   if (req.method === 'POST' && urlPath === '/api/auth/guest') { handleGuestLogin(req, res); return; }
   if (req.method === 'POST' && urlPath === '/api/auth/logout') { handleLogout(req, res); return; }
   if (req.method === 'GET' && urlPath === '/api/auth/me') { handleMe(req, res); return; }
+  if (req.method === 'DELETE' && urlPath === '/api/auth/me') { handleDeleteMe(req, res); return; }
   if (req.method === 'GET' && urlPath === '/api/auth/users') { handleListUsers(req, res); return; }
   if (req.method === 'POST' && urlPath === '/api/auth/forgot-password') { handleForgotPassword(req, res); return; }
   if (req.method === 'POST' && urlPath === '/api/auth/reset-password') { handleResetPassword(req, res); return; }
