@@ -1413,6 +1413,14 @@ function applySecurityHeaders(res) {
       // Nothing on this site uses the camera/mic/location — explicitly
       // turning them off means an XSS bug elsewhere can't abuse them either.
       'Permissions-Policy': 'geolocation=(), camera=(), microphone=()',
+      // The native iOS/Android app loads this page from its own local
+      // origin (capacitor://localhost) and calls this API cross-origin.
+      // Without these, the browser inside the app silently blocks every
+      // request — auth (Bearer tokens, not cookies) doesn't need this
+      // locked to one origin, so '*' is safe here.
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       ...ownHeaders,
     };
     return reasonGiven
@@ -1426,6 +1434,15 @@ function applySecurityHeaders(res) {
 const server = http.createServer((req, res) => {
   applySecurityHeaders(res);
   const urlPath = decodeURIComponent(req.url.split('?')[0]);
+
+  // Browsers send an OPTIONS preflight before the real cross-origin
+  // request (e.g. every POST/PATCH/DELETE call the native app makes).
+  // Answer it immediately with the CORS headers above and skip the router.
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
 
   if (req.method === 'POST' && urlPath === '/api/chat') {
     handleChat(req, res);
