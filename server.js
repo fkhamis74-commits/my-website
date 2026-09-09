@@ -1335,9 +1335,46 @@ async function handleDeleteClub(req, res, id) {
   res.end();
 }
 
+// ---- Security headers ---------------------------------------------------------
+// Wraps res.writeHead once per request so every response — from every
+// handler above, present and future — gets these without having to touch
+// each individual res.writeHead()/sendJson() call site. A handler can still
+// override any of these by setting the same header itself.
+function applySecurityHeaders(res) {
+  const originalWriteHead = res.writeHead.bind(res);
+  res.writeHead = (statusCode, headersOrReason, maybeHeaders) => {
+    const reasonGiven = typeof headersOrReason === 'string';
+    const ownHeaders = (reasonGiven ? maybeHeaders : headersOrReason) || {};
+    const merged = {
+      // Stops browsers from "helpfully" guessing a different content type
+      // than what's declared — the classic vector for a file upload/user
+      // content endpoint to be reinterpreted as HTML/script.
+      'X-Content-Type-Options': 'nosniff',
+      // This site is never meant to be embedded in someone else's page —
+      // blocks clickjacking (an invisible iframe of this site laid over
+      // fake UI to trick clicks into e.g. deleting a listing).
+      'X-Frame-Options': 'DENY',
+      // Don't leak the full URL (which can contain a product id, a search
+      // query, etc.) to third-party sites linked from this one.
+      'Referrer-Policy': 'strict-origin-when-cross-origin',
+      // Render already terminates HTTPS in front of this app; this tells
+      // browsers to remember that and never fall back to plain HTTP for it.
+      'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+      // Nothing on this site uses the camera/mic/location — explicitly
+      // turning them off means an XSS bug elsewhere can't abuse them either.
+      'Permissions-Policy': 'geolocation=(), camera=(), microphone=()',
+      ...ownHeaders,
+    };
+    return reasonGiven
+      ? originalWriteHead(statusCode, headersOrReason, merged)
+      : originalWriteHead(statusCode, merged);
+  };
+}
+
 // ---- Router -----------------------------------------------------------------
 
 const server = http.createServer((req, res) => {
+  applySecurityHeaders(res);
   const urlPath = decodeURIComponent(req.url.split('?')[0]);
 
   if (req.method === 'POST' && urlPath === '/api/chat') {
