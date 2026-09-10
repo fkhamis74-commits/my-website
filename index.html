@@ -752,9 +752,8 @@
       margin-bottom: 8px;
       font-weight: 700;
       color: var(--text);
-      font-size: 0.9rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      font-size: var(--fs-sm);
+      letter-spacing: 0.01em;
     }
 
     .form-group input,
@@ -763,12 +762,12 @@
       width: 100%;
       padding: 14px;
       border: 2px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--radius-md);
       font-size: 1rem;
       background: var(--bg);
       color: var(--text);
       font-family: inherit;
-      transition: all 0.4s ease;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
     }
 
     .form-group input::placeholder,
@@ -1840,6 +1839,7 @@
     .filter-bar select:focus,
     .filter-bar input[type="text"]:focus {
       border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
       outline: none;
     }
 
@@ -2039,61 +2039,69 @@
     .site-footer {
       background: #0F172A;
       color: #94A3B8;
-      padding: 32px 24px;
+      padding: 40px 24px 0;
       margin-top: 40px;
       border-top: 1px solid #1E293B;
-      font-size: 0.85rem;
+      font-size: var(--fs-sm);
     }
 
     .site-footer-inner {
       max-width: 1100px;
       margin: 0 auto;
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 32px;
+      text-align: start;
+    }
+
+    .site-footer-col {
       display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items: center;
-      gap: 16px;
-      text-align: center;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .site-footer-brand-col { gap: 8px; }
+
+    .site-footer-heading {
+      color: #CBD5E1;
+      font-weight: 800;
+      font-size: var(--fs-xs);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 2px;
     }
 
     .site-footer-brand {
       color: white;
-      font-weight: 800;
-      font-size: 1rem;
+      font-weight: 900;
+      font-size: 1.15rem;
     }
 
     .site-footer-tagline {
       color: #64748B;
-      font-size: 0.75rem;
-      margin-top: 4px;
-    }
-
-    .site-footer-links {
-      display: flex;
-      gap: 24px;
-      font-size: 0.8rem;
+      font-size: var(--fs-xs);
+      line-height: 1.6;
+      max-width: 32ch;
     }
 
     .site-footer-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5em;
       background: none;
       border: none;
       color: #94A3B8;
       cursor: pointer;
       font-family: inherit;
-      font-size: inherit;
-      text-decoration: none; /* the social row below reuses this class on <a> tags */
+      font-size: var(--fs-xs);
+      text-decoration: none; /* the social links reuse this class on <a> tags */
       padding: 0;
       transition: color 0.2s;
     }
+    .site-footer-link .icon { width: 1em; height: 1em; }
 
     .site-footer-link:hover {
       color: white;
-    }
-
-    .site-footer-social {
-      display: flex;
-      gap: 16px;
-      font-size: 0.8rem;
     }
 
     .site-footer-social-instagram:hover { color: #EC4899; }
@@ -2101,9 +2109,25 @@
     .site-footer-social-whatsapp:hover { color: #10B981; }
     .site-footer-social-snapchat:hover { color: #FFFC00; }
 
+    .site-footer-bar {
+      max-width: 1100px;
+      margin: 32px auto 0;
+      padding: 18px 0 24px;
+      border-top: 1px solid #1E293B;
+      text-align: center;
+    }
+
     .site-footer-copyright {
       color: #475569;
-      font-size: 0.75rem;
+      font-size: var(--fs-xs);
+    }
+
+    @media (max-width: 640px) {
+      .site-footer-inner {
+        grid-template-columns: 1fr 1fr;
+        gap: 26px 20px;
+      }
+      .site-footer-brand-col { grid-column: 1 / -1; }
     }
 
     .legal-modal-header {
@@ -4532,23 +4556,27 @@
          stays visible under whichever page is currently active. -->
     <footer class="site-footer">
       <div class="site-footer-inner">
-        <div>
+        <div class="site-footer-col site-footer-brand-col">
           <div class="site-footer-brand">Pedalex</div>
           <div class="site-footer-tagline" data-i18n="footerTagline">منصة إعلانات مبوبة مستقلة للدراجات الهوائية في الإمارات.</div>
         </div>
-        <div class="site-footer-links">
+        <nav class="site-footer-col">
+          <div class="site-footer-heading" data-i18n="footerLinksHeading">روابط</div>
           <button class="site-footer-link" onclick="openLegalModal('terms')" data-i18n="footerTermsLink">الشروط والأحكام</button>
           <button class="site-footer-link" onclick="openLegalModal('privacy')" data-i18n="footerPrivacyLink">سياسة الخصوصية</button>
-        </div>
-        <div class="site-footer-social">
-          <a href="https://instagram.com/pedalexbikes" target="_blank" rel="noopener" class="site-footer-link site-footer-social-instagram" data-i18n="footerInstagramLink">إنستغرام</a>
-          <a href="https://tiktok.com/@pedalexbikes" target="_blank" rel="noopener" class="site-footer-link site-footer-social-tiktok" data-i18n="footerTiktokLink">تيك توك</a>
-          <a href="https://www.snapchat.com/add/pedalexbikes" target="_blank" rel="noopener" class="site-footer-link site-footer-social-snapchat" data-i18n="footerSnapchatLink">سناب شات</a>
+        </nav>
+        <nav class="site-footer-col site-footer-social">
+          <div class="site-footer-heading" data-i18n="footerConnectHeading">تواصل معنا</div>
+          <a href="https://instagram.com/pedalexbikes" target="_blank" rel="noopener" class="site-footer-link has-icon site-footer-social-instagram"><svg class="icon"><use href="#i-instagram"></use></svg><span data-i18n="footerInstagramLink">إنستغرام</span></a>
+          <a href="https://tiktok.com/@pedalexbikes" target="_blank" rel="noopener" class="site-footer-link has-icon site-footer-social-tiktok"><svg class="icon icon-fill"><use href="#i-tiktok"></use></svg><span data-i18n="footerTiktokLink">تيك توك</span></a>
+          <a href="https://www.snapchat.com/add/pedalexbikes" target="_blank" rel="noopener" class="site-footer-link has-icon site-footer-social-snapchat"><svg class="icon icon-fill"><use href="#i-snapchat"></use></svg><span data-i18n="footerSnapchatLink">سناب شات</span></a>
           <!-- Placeholder support number — same demo digits used across
                DEMO_PRODUCTS, kept intentionally until a real support line
                is available (confirmed with the user). -->
-          <a href="https://wa.me/971500000000" target="_blank" rel="noopener" class="site-footer-link site-footer-social-whatsapp" data-i18n="footerWhatsappSupportLink">دعم الواتساب</a>
-        </div>
+          <a href="https://wa.me/971500000000" target="_blank" rel="noopener" class="site-footer-link has-icon site-footer-social-whatsapp"><svg class="icon"><use href="#i-message"></use></svg><span data-i18n="footerWhatsappSupportLink">دعم الواتساب</span></a>
+        </nav>
+      </div>
+      <div class="site-footer-bar">
         <div class="site-footer-copyright" data-i18n="footerCopyright">© 2026 Pedalex. جميع الحقوق محفوظة.</div>
       </div>
     </footer>
@@ -4899,6 +4927,8 @@
             '<p>لأي استفسار متعلق بالخصوصية أو بياناتك، تواصل معنا عبر: pedalexbikes@gmail.com</p>',
         },
         footerTagline: 'منصة إعلانات مبوبة مستقلة للدراجات الهوائية في الإمارات.',
+        footerLinksHeading: 'روابط',
+        footerConnectHeading: 'تواصل معنا',
         footerTermsLink: 'الشروط والأحكام',
         footerPrivacyLink: 'سياسة الخصوصية',
         footerInstagramLink: 'إنستغرام',
@@ -5398,6 +5428,8 @@
             '<p>For any privacy question or data request, reach us at: pedalexbikes@gmail.com</p>',
         },
         footerTagline: 'An independent classifieds platform for bikes in the UAE.',
+        footerLinksHeading: 'Links',
+        footerConnectHeading: 'Connect',
         footerTermsLink: 'Terms & Conditions',
         footerPrivacyLink: 'Privacy Policy',
         footerInstagramLink: 'Instagram',
