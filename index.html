@@ -70,6 +70,29 @@
       min-height: 100vh;
     }
 
+    /* Shared line-icon system — see the #i-* sprite at the top of <body>.
+       Sizes to the surrounding text, inherits its colour, and never shrinks
+       in a flex row. */
+    .icon {
+      width: 1.15em;
+      height: 1.15em;
+      flex: none;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      vertical-align: -0.18em;
+      pointer-events: none;
+    }
+    .icon-fill { fill: currentColor; stroke: none; }
+    /* Buttons/headings that pair an icon with a text label */
+    .has-icon {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+
     /* Dark mode mirrors the light theme's cool slate palette rather than the
        old purple-tinted dark theme, so both modes read as one brand. */
     body.dark-mode {
@@ -782,6 +805,10 @@
     }
 
     .auth-option-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5em;
       padding: 22px;
       background: var(--card);
       border: 2px solid var(--border);
@@ -1753,8 +1780,11 @@
       margin: 0 0 24px;
       padding-bottom: 12px;
       border-bottom: 3px solid var(--accent);
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55em;
     }
+    .section-heading .icon { color: var(--accent); }
 
     .message-item {
       padding: 16px;
@@ -3333,6 +3363,34 @@
   </style>
 </head>
 <body>
+  <!-- ===== Icon sprite =====================================================
+       One shared set of line icons (24x24, stroke = currentColor) so buttons,
+       nav, and headings stop relying on OS emoji (which render differently on
+       every device and sometimes show as a blank box). Reference an icon with
+       <svg class="icon"><use href="#i-NAME"></use></svg> in static markup, or
+       icon('NAME') in JS-built HTML. -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <g id="i-menu"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></g>
+      <g id="i-x"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></g>
+      <g id="i-chevron-down"><polyline points="6 9 12 15 18 9"/></g>
+      <g id="i-globe"><circle cx="12" cy="12" r="9"/><line x1="3" y1="12" x2="21" y2="12"/><path d="M12 3c2.5 2.5 3.8 5.8 3.8 9S14.5 18.5 12 21c-2.5-2.5-3.8-5.8-3.8-9S9.5 5.5 12 3z"/></g>
+      <g id="i-user"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></g>
+      <g id="i-user-plus"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></g>
+      <g id="i-log-in"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></g>
+      <g id="i-arrow-in-circle"><circle cx="12" cy="12" r="9"/><polyline points="10 8 14 12 10 16"/></g>
+      <g id="i-check-circle"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></g>
+      <g id="i-star"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></g>
+      <g id="i-help-circle"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></g>
+      <g id="i-mail"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22 6 12 13 2 6"/></g>
+      <g id="i-share"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></g>
+      <g id="i-message"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></g>
+      <g id="i-instagram"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></g>
+      <g id="i-tiktok"><path d="M15 4c.5 2.3 2.2 4 4.5 4.3V11c-1.7 0-3.3-.5-4.5-1.4v6.1a5.7 5.7 0 1 1-5.7-5.7c.3 0 .6 0 .9.1v2.9a2.8 2.8 0 1 0 2 2.7V4z"/></g>
+      <g id="i-snapchat"><path d="M12 3c2.6 0 4.2 1.9 4.2 4.5 0 .8-.1 1.6-.1 2 .3.6 1 1 1.7 1 .5 0 .9.2.9.6 0 .7-1.3 1.2-2 1.4-.2.5-.1 1.4-.9 1.4-.6 0-1-.4-1.9-.4-1.1 0-1.7 1.3-3.9 1.3s-2.8-1.3-3.9-1.3c-.9 0-1.3.4-1.9.4-.8 0-.7-.9-.9-1.4-.7-.2-2-.7-2-1.4 0-.4.4-.6.9-.6.7 0 1.4-.4 1.7-1 0-.4-.1-1.2-.1-2C7.8 4.9 9.4 3 12 3z"/></g>
+    </defs>
+  </svg>
+
   <!-- Login/Register Page -->
   <div id="page-auth" class="page active">
     <div class="auth-container">
@@ -3341,9 +3399,9 @@
         <h2 data-i18n="authWelcome">مرحباً بك</h2>
         <p data-i18n="authSubtitle">اختر طريقة الدخول</p>
         <div class="auth-options">
-          <button class="auth-option-btn" onclick="showAuthForm('login')" data-i18n="loginOption">دخول</button>
-          <button class="auth-option-btn" onclick="showAuthForm('register')" data-i18n="registerOption">تسجيل جديد</button>
-          <button class="auth-option-btn auth-guest-btn" onclick="handleGuestLogin()" data-i18n="guestLogin">📱 دخول كزائر</button>
+          <button class="auth-option-btn" onclick="showAuthForm('login')"><svg class="icon"><use href="#i-log-in"></use></svg><span data-i18n="loginOption">دخول</span></button>
+          <button class="auth-option-btn" onclick="showAuthForm('register')"><svg class="icon"><use href="#i-user-plus"></use></svg><span data-i18n="registerOption">تسجيل جديد</span></button>
+          <button class="auth-option-btn auth-guest-btn" onclick="handleGuestLogin()"><svg class="icon"><use href="#i-arrow-in-circle"></use></svg><span data-i18n="guestLogin">دخول كزائر</span></button>
         </div>
         <button class="auth-back-btn" onclick="showAuthForm('forgot')" data-i18n="forgotPassword">هل فقدت حسابك؟</button>
       </div>
@@ -3465,7 +3523,7 @@
         <button class="header-add-btn" onclick="openAddPage()">
           <span aria-hidden="true">+</span> <span data-i18n="sellBikeButton">بيع دراجتك</span>
         </button>
-        <button class="mobile-menu-toggle" id="mobileMenuToggle" onclick="toggleMobileNav()" title="القائمة" aria-label="القائمة" data-i18n-title="mobileMenuTitle" data-i18n-aria-label="mobileMenuTitle">☰</button>
+        <button class="mobile-menu-toggle" id="mobileMenuToggle" onclick="toggleMobileNav()" title="القائمة" aria-label="القائمة" data-i18n-title="mobileMenuTitle" data-i18n-aria-label="mobileMenuTitle"><svg class="icon"><use href="#i-menu"></use></svg></button>
       </div>
       <div class="header-collapsible" id="headerCollapsible">
         <div class="nav-buttons">
@@ -3484,7 +3542,7 @@
           </label>
           <div class="user-dropdown-wrapper">
             <button class="user-dropdown-trigger" onclick="toggleUserDropdown()">
-              👤 <span id="currentUser"></span> ▾
+              <svg class="icon"><use href="#i-user"></use></svg> <span id="currentUser"></span> <svg class="icon"><use href="#i-chevron-down"></use></svg>
             </button>
             <div class="user-dropdown-menu" id="userDropdownMenu">
               <button onclick="closeDropdownAndGo('page-profile')" data-i18n="profileButton">👤 ملفي الشخصي</button>
@@ -4139,7 +4197,7 @@
         </div>
 
         <!-- Inspection Tips -->
-        <h2 class="section-heading" data-i18n="sizeTipsHeading">✅ نصائح لفحص الدراجة قبل الشراء</h2>
+        <h2 class="section-heading"><svg class="icon"><use href="#i-check-circle"></use></svg><span data-i18n="sizeTipsHeading">نصائح لفحص الدراجة قبل الشراء</span></h2>
         <div class="tips-wrap">
           <div class="tip-card">
             <div class="tip-icon">🔧</div>
@@ -4211,7 +4269,7 @@
         </div>
 
         <!-- Customer Reviews -->
-        <h2 class="section-heading" data-i18n="customerReviewsHeading">⭐ تقييمات العملاء</h2>
+        <h2 class="section-heading"><svg class="icon icon-fill"><use href="#i-star"></use></svg><span data-i18n="customerReviewsHeading">تقييمات العملاء</span></h2>
         <div class="reviews-grid">
           <div class="review-card">
             <div class="review-stars">★★★★★</div>
@@ -4231,7 +4289,7 @@
         </div>
 
         <!-- FAQ -->
-        <h2 class="section-heading" data-i18n="faqHeading">❓ الأسئلة الشائعة</h2>
+        <h2 class="section-heading"><svg class="icon"><use href="#i-help-circle"></use></svg><span data-i18n="faqHeading">الأسئلة الشائعة</span></h2>
         <div class="faq-wrap">
           <div class="faq-item">
             <button class="faq-question" onclick="toggleFaq(this)">
@@ -4271,21 +4329,21 @@
         </div>
 
         <!-- Follow Us -->
-        <h2 class="section-heading" data-i18n="socialFollowHeading">📱 تابعنا</h2>
+        <h2 class="section-heading"><svg class="icon"><use href="#i-share"></use></svg><span data-i18n="socialFollowHeading">تابعنا</span></h2>
         <div class="social-follow-row">
           <a href="https://instagram.com/pedalexbikes" target="_blank" rel="noopener" class="social-follow-btn social-follow-btn-instagram">
-            <span aria-hidden="true">📷</span> <span data-i18n="footerInstagramLink">إنستغرام</span>
+            <svg class="icon"><use href="#i-instagram"></use></svg> <span data-i18n="footerInstagramLink">إنستغرام</span>
           </a>
           <a href="https://tiktok.com/@pedalexbikes" target="_blank" rel="noopener" class="social-follow-btn social-follow-btn-tiktok">
-            <span aria-hidden="true">🎵</span> <span data-i18n="footerTiktokLink">تيك توك</span>
+            <svg class="icon icon-fill"><use href="#i-tiktok"></use></svg> <span data-i18n="footerTiktokLink">تيك توك</span>
           </a>
           <a href="https://www.snapchat.com/add/pedalexbikes" target="_blank" rel="noopener" class="social-follow-btn social-follow-btn-snapchat">
-            <span aria-hidden="true">👻</span> <span data-i18n="footerSnapchatLink">سناب شات</span>
+            <svg class="icon icon-fill"><use href="#i-snapchat"></use></svg> <span data-i18n="footerSnapchatLink">سناب شات</span>
           </a>
         </div>
 
         <!-- Contact -->
-        <h2 class="section-heading" data-i18n="contactHeading">📬 تواصل معنا</h2>
+        <h2 class="section-heading"><svg class="icon"><use href="#i-mail"></use></svg><span data-i18n="contactHeading">تواصل معنا</span></h2>
         <div class="contact-card">
           <div class="form-group">
             <label data-i18n="contactNameLabel">اسمك</label>
@@ -4333,7 +4391,7 @@
     <!-- Bike Detail Modal -->
     <div class="modal-overlay" id="bikeModal">
       <div class="modal-box">
-        <button class="modal-close" onclick="closeBikeModal()" title="إغلاق" aria-label="إغلاق" data-i18n-title="modalCloseTitle" data-i18n-aria-label="modalCloseTitle">✕</button>
+        <button class="modal-close" onclick="closeBikeModal()" title="إغلاق" aria-label="إغلاق" data-i18n-title="modalCloseTitle" data-i18n-aria-label="modalCloseTitle"><svg class="icon"><use href="#i-x"></use></svg></button>
         <div id="modalImageWrap"></div>
         <div class="modal-body">
           <div class="product-type modal-type" id="modalType"></div>
@@ -4365,7 +4423,7 @@
     <!-- Reject Modal -->
     <div class="reject-modal-overlay" id="rejectModal">
       <div class="reject-modal-box">
-        <button class="reject-modal-close" onclick="closeRejectModal()" title="إغلاق" aria-label="إغلاق" data-i18n-title="modalCloseTitle" data-i18n-aria-label="modalCloseTitle">✕</button>
+        <button class="reject-modal-close" onclick="closeRejectModal()" title="إغلاق" aria-label="إغلاق" data-i18n-title="modalCloseTitle" data-i18n-aria-label="modalCloseTitle"><svg class="icon"><use href="#i-x"></use></svg></button>
         <h3 data-i18n="rejectTitle">🚫 رفض المنتج</h3>
         <p class="reject-modal-desc" data-i18n="rejectDesc">أرسل ملاحظات واضحة للبائع حتى يتمكن من تصحيح الإعلان.</p>
         <input type="hidden" id="rejectProductId" />
@@ -4383,7 +4441,7 @@
     <!-- Ride Detail Modal -->
     <div class="modal-overlay" id="rideModal">
       <div class="modal-box">
-        <button class="modal-close" onclick="closeRideModal()" title="إغلاق" aria-label="إغلاق" data-i18n-title="modalCloseTitle" data-i18n-aria-label="modalCloseTitle">✕</button>
+        <button class="modal-close" onclick="closeRideModal()" title="إغلاق" aria-label="إغلاق" data-i18n-title="modalCloseTitle" data-i18n-aria-label="modalCloseTitle"><svg class="icon"><use href="#i-x"></use></svg></button>
         <div class="modal-body">
           <span class="ride-badge" id="rideModalBikeType"></span>
           <h2 class="modal-title" id="rideModalTitle" style="margin-top:12px;"></h2>
@@ -4443,7 +4501,7 @@
             <span class="chat-status-dot"></span>
             <span data-i18n="chatWidgetTitle">💬 مساعد المتجر</span>
           </span>
-          <button class="chat-panel-close" onclick="toggleChatWidget()" title="إغلاق الدردشة" aria-label="إغلاق الدردشة" data-i18n-title="chatCloseTitle" data-i18n-aria-label="chatCloseTitle">✕</button>
+          <button class="chat-panel-close" onclick="toggleChatWidget()" title="إغلاق الدردشة" aria-label="إغلاق الدردشة" data-i18n-title="chatCloseTitle" data-i18n-aria-label="chatCloseTitle"><svg class="icon"><use href="#i-x"></use></svg></button>
         </div>
         <div class="chat-panel-messages" id="chatMessages"></div>
         <div class="chat-quick-prompts">
@@ -4466,7 +4524,7 @@
        without logging in first. -->
   <div class="modal-overlay" id="legalModal">
     <div class="modal-box" style="max-width: 640px;">
-      <button class="modal-close" onclick="closeLegalModal()" title="إغلاق" aria-label="إغلاق" data-i18n-title="modalCloseTitle" data-i18n-aria-label="modalCloseTitle">✕</button>
+      <button class="modal-close" onclick="closeLegalModal()" title="إغلاق" aria-label="إغلاق" data-i18n-title="modalCloseTitle" data-i18n-aria-label="modalCloseTitle"><svg class="icon"><use href="#i-x"></use></svg></button>
       <div class="legal-modal-header" id="legalModalTitle"></div>
       <div class="legal-modal-body" id="legalModalContent"></div>
       <div class="legal-modal-footer">
@@ -4503,9 +4561,9 @@
         // Auth
         authWelcome: 'مرحباً بك',
         authSubtitle: 'اختر طريقة الدخول',
-        loginOption: '🔑 دخول',
-        registerOption: '📝 تسجيل جديد',
-        guestLogin: '📱 دخول كزائر',
+        loginOption: 'دخول',
+        registerOption: 'تسجيل جديد',
+        guestLogin: 'دخول كزائر',
         forgotPassword: 'نسيت كلمة المرور؟',
         backButton: 'العودة',
         forgotPasswordTitle: 'استرجاع الحساب',
@@ -4546,8 +4604,8 @@
         adminButton: 'الإدارة',
         logoutButton: 'تسجيل الخروج',
         darkModeLabel: 'الوضع الليلي',
-        langToggleToEnglish: 'English 🌐',
-        langToggleToArabic: 'عربي 🌐',
+        langToggleToEnglish: 'English',
+        langToggleToArabic: 'عربي',
 
         // Home
         heroChip: 'دراجات مستعملة موثوقة',
@@ -4571,8 +4629,8 @@
         aboutStatProducts: 'منتج متوفر',
         aboutStatUsers: 'مستخدم موثوق',
         aboutStatRating: 'تقييم عام',
-        customerReviewsHeading: '⭐ تقييمات العملاء',
-        faqHeading: '❓ الأسئلة الشائعة',
+        customerReviewsHeading: 'تقييمات العملاء',
+        faqHeading: 'الأسئلة الشائعة',
         faqQ1: 'كيف أبيع دراجتي على الموقع؟',
         faqA1: 'سجّل حساباً مجانياً، ثم اضغط على "بيع دراجتك" في القائمة العلوية. أضف صور واضحة، اكتب وصفاً دقيقاً وحدد سعراً مناسباً. سيتواصل المهتمون معك مباشرةً عبر المنصة.',
         faqQ2: 'هل الشراء والبيع مجاني؟',
@@ -4583,8 +4641,8 @@
         faqA4: 'تواصل معنا عبر نموذج الدعم أدناه أو عبر البريد الإلكتروني. سنستجيب خلال 24 ساعة وسنساعدك في حل أي نزاع.',
         faqQ5: 'هل يمكنني إضافة ملحقات ومعدات وليس فقط دراجات؟',
         faqA5: 'بالتأكيد! يمكنك إضافة الخوذات والكفوف والإضاءة والأحزمة وغيرها من الملحقات بنفس الطريقة.',
-        socialFollowHeading: '📱 تابعنا',
-        contactHeading: '📬 تواصل معنا',
+        socialFollowHeading: 'تابعنا',
+        contactHeading: 'تواصل معنا',
         contactNameLabel: 'اسمك',
         contactNamePlaceholder: 'اسمك الكامل',
         contactEmailLabel: 'بريدك الإلكتروني',
@@ -4967,7 +5025,7 @@
         sizeColFrame: 'حجم الإطار',
         sizeColType: 'النوع',
         sizeRowTypeMountainRoad: 'جبلية / طريق',
-        sizeTipsHeading: '✅ نصائح لفحص الدراجة قبل الشراء',
+        sizeTipsHeading: 'نصائح لفحص الدراجة قبل الشراء',
         tip1Title: 'الإطار والهيكل',
         tip1Desc: 'ابحث عن أي شقوق أو لحامات. تحقق من استقامة الهيكل وعدم وجود انحناء خاصةً في منطقة الرقبة والحوامل الخلفية.',
         tip2Title: 'ناقل الحركة والسلسلة',
@@ -5002,9 +5060,9 @@
         // Auth
         authWelcome: 'Welcome',
         authSubtitle: 'Choose how you want to sign in',
-        loginOption: '🔑 Login',
-        registerOption: '📝 Create Account',
-        guestLogin: '📱 Guest Login',
+        loginOption: 'Login',
+        registerOption: 'Create Account',
+        guestLogin: 'Guest Login',
         forgotPassword: 'Lost Your Account?',
         backButton: 'Back',
         forgotPasswordTitle: 'Recover Account',
@@ -5045,8 +5103,8 @@
         adminButton: 'Admin',
         logoutButton: 'Logout',
         darkModeLabel: 'Dark Mode',
-        langToggleToEnglish: 'English 🌐',
-        langToggleToArabic: 'Arabic 🌐',
+        langToggleToEnglish: 'English',
+        langToggleToArabic: 'Arabic',
 
         // Home
         heroChip: 'Trusted Pre-Loved Bikes',
@@ -5070,8 +5128,8 @@
         aboutStatProducts: 'Available products',
         aboutStatUsers: 'Trusted users',
         aboutStatRating: 'Overall rating',
-        customerReviewsHeading: '⭐ Customer Reviews',
-        faqHeading: '❓ Frequently Asked Questions',
+        customerReviewsHeading: 'Customer Reviews',
+        faqHeading: 'Frequently Asked Questions',
         faqQ1: 'How do I sell my bike on the website?',
         faqA1: 'Create a free account, then click "Sell your bike" from the top menu. Add clear photos, write an accurate description, and set a fair price. Interested buyers can contact you directly on the platform.',
         faqQ2: 'Is buying and selling free?',
@@ -5082,8 +5140,8 @@
         faqA4: 'Contact us using the support form below or by email. We respond within 24 hours and help resolve disputes.',
         faqQ5: 'Can I list accessories and gear, not just bikes?',
         faqA5: 'Absolutely. You can list helmets, gloves, lights, straps, and other cycling accessories the same way.',
-        socialFollowHeading: '📱 Follow Us',
-        contactHeading: '📬 Contact Us',
+        socialFollowHeading: 'Follow Us',
+        contactHeading: 'Contact Us',
         contactNameLabel: 'Your Name',
         contactNamePlaceholder: 'Your full name',
         contactEmailLabel: 'Your Email',
@@ -5466,7 +5524,7 @@
         sizeColFrame: 'Frame Size',
         sizeColType: 'Type',
         sizeRowTypeMountainRoad: 'Mountain / Road',
-        sizeTipsHeading: '✅ Tips to Inspect a Bike Before Buying',
+        sizeTipsHeading: 'Tips to Inspect a Bike Before Buying',
         tip1Title: 'Frame & Chassis',
         tip1Desc: 'Look for cracks or suspicious welds. Check frame alignment and watch for bends, especially near the head tube and rear stays.',
         tip2Title: 'Drivetrain & Chain',
@@ -5507,6 +5565,13 @@
       return Object.keys(vars).reduce((acc, varKey) => {
         return acc.replaceAll(`{${varKey}}`, String(vars[varKey]));
       }, template);
+    }
+
+    // Returns an <svg> that points at one symbol in the #i-* sprite (top of
+    // <body>). Use in JS-built HTML strings the same way static markup uses
+    // <svg class="icon"><use href="#i-NAME"></use></svg>.
+    function icon(name, extraClass = '') {
+      return `<svg class="icon ${extraClass}" aria-hidden="true"><use href="#i-${name}"></use></svg>`;
     }
 
     // Escapes user-generated text before it's inserted into innerHTML, to prevent stored XSS.
@@ -6056,9 +6121,12 @@
     function updateLangToggleButtonText() {
       const btn = document.getElementById('langToggleBtn');
       if (!btn) return;
-      btn.innerText = currentLang === 'ar'
-        ? t('langToggleToEnglish', 'English 🌐')
-        : t('langToggleToArabic', 'Arabic 🌐');
+      const label = currentLang === 'ar'
+        ? t('langToggleToEnglish', 'English')
+        : t('langToggleToArabic', 'Arabic');
+      btn.classList.add('has-icon');
+      btn.innerHTML = icon('globe') + '<span></span>';
+      btn.querySelector('span').textContent = label;
     }
 
     function toggleLanguage() {
