@@ -50,6 +50,37 @@
       --modal-close-hover-bg: rgba(231, 76, 60, 0.9);
       --shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
       --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+
+      /* ---- Design tokens -------------------------------------------------
+         One scale for spacing, radius and type so components stay in the
+         same rhythm. New/edited rules should reach for these instead of
+         ad-hoc px values. */
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 24px;
+      --space-6: 32px;
+      --space-7: 48px;
+      --space-8: 64px;
+
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+      --radius-pill: 999px;
+
+      /* Fluid type scale — shrinks on phones, caps on desktop */
+      --fs-xs:   0.78rem;
+      --fs-sm:   0.85rem;
+      --fs-base: 0.95rem;
+      --fs-md:   1.05rem;
+      --fs-lg:   clamp(1.15rem, 1.05rem + 0.5vw, 1.35rem);
+      --fs-xl:   clamp(1.3rem, 1.1rem + 1vw, 1.6rem);
+      --fs-2xl:  clamp(1.5rem, 1.15rem + 1.7vw, 2rem);
+      --fs-3xl:  clamp(1.9rem, 1.35rem + 2.6vw, 3rem);
+
+      --ease: 0.25s ease;
     }
 
     * { box-sizing: border-box; }
@@ -383,7 +414,7 @@
 
     .size-calc-title {
       margin: 0 0 6px;
-      font-size: 1.4rem;
+      font-size: var(--fs-lg);
       font-weight: 900;
     }
 
@@ -686,10 +717,10 @@
     /* Login Page */
     .auth-container {
       max-width: 600px;
-      margin: 60px auto;
+      margin: clamp(24px, 8vw, 60px) auto;
       background: var(--card);
-      padding: 50px;
-      border-radius: 20px;
+      padding: clamp(24px, 6vw, 50px);
+      border-radius: var(--radius-xl);
       box-shadow: var(--shadow-lg);
       border: 2px solid var(--border);
     }
@@ -698,11 +729,12 @@
       text-align: center;
       color: var(--text);
       margin-bottom: 30px;
-      font-size: 1.8rem;
+      font-size: var(--fs-xl);
       font-weight: 900;
       text-transform: uppercase;
-      letter-spacing: -0.5px;
+      letter-spacing: -0.01em;
     }
+    [dir="rtl"] .auth-container h1 { letter-spacing: normal; text-transform: none; }
 
     .form-group {
       margin-bottom: 24px;
@@ -813,11 +845,12 @@
     .auth-choice-screen h2 {
       color: var(--text);
       margin-bottom: 10px;
-      font-size: 2.2rem;
+      font-size: var(--fs-2xl);
       font-weight: 900;
       text-transform: uppercase;
-      letter-spacing: -1px;
+      letter-spacing: -0.01em;
     }
+    [dir="rtl"] .auth-choice-screen h2 { letter-spacing: normal; text-transform: none; }
 
     .auth-choice-screen p {
       color: var(--muted);
@@ -1570,7 +1603,7 @@
     /* ===== AK Bikes Page Hero ===== */
     .page-hero {
       position: relative;
-      padding: 90px 40px 70px;
+      padding: clamp(48px, 10vw, 90px) clamp(20px, 5vw, 40px) clamp(40px, 8vw, 70px);
       margin-bottom: 40px;
       overflow: hidden;
       text-align: center;
@@ -1594,12 +1627,16 @@
     }
 
     .page-hero h1 {
-      font-size: 3rem;
+      font-size: var(--fs-3xl);
       font-weight: 900;
       margin: 0 0 16px;
-      line-height: 1.1;
-      letter-spacing: -1px;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
     }
+    [dir="rtl"] .page-hero h1 { letter-spacing: normal; }
+    .page-hero h1, .auth-choice-screen h2, .auth-container h1,
+    .category-section-title, .size-quick-filter-title, .section-heading,
+    .size-calc-title { text-wrap: balance; }
 
     .page-hero p {
       font-size: 1.1rem;
@@ -1610,13 +1647,14 @@
 
     /* ===== Category Grid (Home) ===== */
     .category-section-title {
-      font-size: 2rem;
+      font-size: var(--fs-2xl);
       font-weight: 900;
       text-align: center;
       color: var(--text);
       margin-bottom: 28px;
-      letter-spacing: -0.5px;
+      letter-spacing: -0.01em;
     }
+    [dir="rtl"] .category-section-title { letter-spacing: normal; }
 
     .category-grid {
       display: grid;
@@ -1702,7 +1740,7 @@
     }
 
     .size-quick-filter-title {
-      font-size: 1.5rem;
+      font-size: var(--fs-xl);
       font-weight: 800;
       margin: 12px 0 4px;
     }
@@ -1803,7 +1841,7 @@
 
     /* ===== AK Bikes section title style ===== */
     .section-heading {
-      font-size: 1.5rem;
+      font-size: var(--fs-xl);
       font-weight: 900;
       color: var(--text);
       margin: 0 0 24px;
