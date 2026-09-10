@@ -529,6 +529,10 @@
       z-index: 100;
     }
 
+    /* While the mobile drawer is open, lift the whole header (its stacking
+       context) above the chat button (z-index 500) so the backdrop covers it. */
+    .header:has(#headerCollapsible.open) { z-index: 600; }
+
     /* A <button> now (clicking it goes home), so its own chrome needs
        resetting back to plain — the flex/gap layout is what actually gives
        it its look. */
@@ -650,6 +654,9 @@
       gap: 10px;
       flex-wrap: wrap;
     }
+
+    /* Only shown inside the mobile nav drawer (see the ≤768px block) */
+    .drawer-close { display: none; }
 
     .nav-btn {
       padding: 9px 14px;
@@ -3352,36 +3359,95 @@
         padding: 16px;
       }
 
-      .header {
-        position: relative; /* anchors the collapsible drawer below it */
-      }
-
       .mobile-menu-toggle {
         display: block;
       }
 
-      /* Collapses into a dropdown drawer instead of the old always-visible
-         stacked column — was every nav button + the language select + the
-         language toggle button + the dark-mode switch + the user menu all
-         piled on top of each other, permanently, on every page. */
+      /* Tighten the header so it stays a single row on phones */
+      .header {
+        padding: calc(14px + env(safe-area-inset-top)) 16px 14px;
+        gap: 12px;
+        flex-wrap: nowrap;
+      }
+      .header-actions { gap: 8px; }
+      .logo { gap: 9px; min-width: 0; }
+      .logo-tagline { display: none; }
+      .logo-wordmark { font-size: 1.25rem; }
+      .header-add-btn { padding: 9px 14px; }
+
+      /* The nav collapses into a proper slide-over drawer: a fixed panel
+         anchored to the end (left in RTL) that slides in over a dimmed
+         page, instead of the old un-animated dropdown that pushed content
+         around. It's always laid out (display:flex) and shown/hidden by
+         transform + visibility so the slide can animate both ways. */
       .header-collapsible {
-        display: none;
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        inset-inline-start: 0;   /* start side: left in LTR, right in RTL */
+        width: min(82vw, 320px);
         flex-direction: column;
+        justify-content: flex-start;
         align-items: stretch;
-        gap: 16px;
+        gap: 14px;
         background: var(--card);
-        border-top: 2px solid var(--border);
-        box-shadow: var(--shadow-lg);
-        padding: 16px 20px 20px;
-        z-index: 99;
+        box-shadow: 8px 0 40px rgba(0, 0, 0, 0.22);
+        padding: calc(24px + env(safe-area-inset-top)) 22px calc(24px + env(safe-area-inset-bottom));
+        z-index: 300;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        /* hidden: pushed off the start edge */
+        transform: translateX(-100%);
+        visibility: hidden;
+        transition: transform 0.28s ease, visibility 0s linear 0.28s;
+      }
+      /* In RTL the panel sits on the right, so it hides by moving right */
+      [dir="rtl"] .header-collapsible {
+        transform: translateX(100%);
+        box-shadow: -8px 0 40px rgba(0, 0, 0, 0.22);
       }
 
       .header-collapsible.open {
-        display: flex;
+        transform: translateX(0);
+        visibility: visible;
+        transition: transform 0.28s ease;
+      }
+
+      .nav-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.45);
+        z-index: 250;
+        opacity: 0;
+        transition: opacity 0.28s ease;
+      }
+      .nav-backdrop.open {
+        opacity: 1;
+      }
+
+      /* Close (X) button pinned to the top of the drawer */
+      .drawer-close {
+        align-self: flex-start;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        margin-bottom: 4px;
+        background: none;
+        border: 2px solid var(--border);
+        border-radius: var(--radius-md);
+        color: var(--text);
+        cursor: pointer;
+      }
+      .drawer-close .icon { width: 1.15rem; height: 1.15rem; }
+
+      /* Nav items read as a list inside the drawer, not centered pills */
+      .header-collapsible .nav-btn {
+        text-align: start;
+        border-radius: var(--radius-md);
+        padding: 12px 14px;
       }
 
       .nav-buttons {
@@ -3620,7 +3686,11 @@
         </button>
         <button class="mobile-menu-toggle" id="mobileMenuToggle" onclick="toggleMobileNav()" title="القائمة" aria-label="القائمة" data-i18n-title="mobileMenuTitle" data-i18n-aria-label="mobileMenuTitle"><svg class="icon"><use href="#i-menu"></use></svg></button>
       </div>
+      <!-- Dim layer behind the mobile nav drawer; tap to dismiss. Lives
+           inside .header so it shares the drawer's stacking context. -->
+      <div class="nav-backdrop" id="navBackdrop" onclick="closeMobileNav()" hidden></div>
       <div class="header-collapsible" id="headerCollapsible">
+        <button class="drawer-close" onclick="closeMobileNav()" title="إغلاق" aria-label="إغلاق" data-i18n-title="modalCloseTitle" data-i18n-aria-label="modalCloseTitle"><svg class="icon"><use href="#i-x"></use></svg></button>
         <div class="nav-buttons">
           <button class="nav-btn" onclick="showPage('page-home')" data-i18n="homeButton">الرئيسية</button>
           <button class="nav-btn" onclick="showPage('page-inventory')" data-i18n="inventoryButton">تصفح الدراجات</button>
@@ -6287,12 +6357,30 @@
     // ===== MOBILE NAV DRAWER =====
     // Only relevant at the ≤768px breakpoint — the toggle button itself is
     // hidden above that, so this never gets triggered on desktop.
+    function setMobileNav(open) {
+      const drawer = document.getElementById('headerCollapsible');
+      const backdrop = document.getElementById('navBackdrop');
+      drawer.classList.toggle('open', open);
+      if (backdrop) {
+        if (open) {
+          backdrop.hidden = false;
+          requestAnimationFrame(() => backdrop.classList.add('open')); // fade in
+        } else {
+          backdrop.classList.remove('open');                          // fade out
+          setTimeout(() => { backdrop.hidden = true; }, 300);
+        }
+      }
+      // stop the page behind the drawer from scrolling while it's open
+      document.body.style.overflow = open ? 'hidden' : '';
+    }
+
     function toggleMobileNav() {
-      document.getElementById('headerCollapsible').classList.toggle('open');
+      const isOpen = document.getElementById('headerCollapsible').classList.contains('open');
+      setMobileNav(!isOpen);
     }
 
     function closeMobileNav() {
-      document.getElementById('headerCollapsible').classList.remove('open');
+      setMobileNav(false);
     }
 
     // close the drawer when clicking outside it (but not on the toggle
@@ -6300,7 +6388,18 @@
     document.addEventListener('click', function(e) {
       const drawer = document.getElementById('headerCollapsible');
       const toggleBtn = document.getElementById('mobileMenuToggle');
-      if (drawer && !drawer.contains(e.target) && !toggleBtn.contains(e.target)) {
+      if (drawer && drawer.classList.contains('open') &&
+          !drawer.contains(e.target) && !toggleBtn.contains(e.target)) {
+        closeMobileNav();
+      }
+    });
+
+    // If the viewport grows past the mobile breakpoint while the drawer is
+    // open, drop the drawer state so the desktop nav isn't stuck "open"
+    // and the body scroll lock is released.
+    window.addEventListener('resize', function() {
+      if (window.innerWidth > 768 &&
+          document.getElementById('headerCollapsible').classList.contains('open')) {
         closeMobileNav();
       }
     });
