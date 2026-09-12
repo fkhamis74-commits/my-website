@@ -377,14 +377,37 @@ const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 // admin@bikestore.com / admin123) — kept so anyone who already knew those
 // demo credentials still gets in after this migration. Change the password
 // after first login.
+// The seed admin account's credentials used to be the hardcoded literal
+// "admin@bikestore.com" / "admin123" — fine for local dev, but this file is
+// committed to a *public* repo, so a fixed, published password would let
+// anyone who reads the source log in as admin on any deployment that hasn't
+// overwritten it. Now: the email/password come from ADMIN_SEED_EMAIL /
+// ADMIN_SEED_PASSWORD (set these in Render's environment for the live
+// deploy) and fall back to a random password — printed to the server log
+// *once*, on first boot — so a deploy started with no env vars set still
+// isn't sitting on a public default. Either way, this only ever runs once
+// (see loadUsersFromDisk): it seeds users.json the first time it doesn't
+// exist, and never runs again once a real users.json is on disk.
 function seedDefaultUsers() {
+  const email = process.env.ADMIN_SEED_EMAIL || 'admin@bikestore.com';
+  let password = process.env.ADMIN_SEED_PASSWORD;
+  if (!password) {
+    password = crypto.randomBytes(9).toString('base64url'); // 12 random chars
+    console.log('='.repeat(72));
+    console.log(`No ADMIN_SEED_PASSWORD set — generated a one-time admin password.`);
+    console.log(`  Admin email:    ${email}`);
+    console.log(`  Admin password: ${password}`);
+    console.log(`Log in once with this, then set ADMIN_SEED_EMAIL / ADMIN_SEED_PASSWORD`);
+    console.log(`as real environment variables so this isn't regenerated on next deploy.`);
+    console.log('='.repeat(72));
+  }
   return [
     {
       id: 1,
       name: 'Admin',
-      email: 'admin@bikestore.com',
+      email,
       phone: '',
-      passwordHash: hashPassword('admin123'),
+      passwordHash: hashPassword(password),
       rating: 5,
       reviews: [],
       isAdmin: true,
