@@ -817,6 +817,23 @@
       color: var(--muted);
     }
 
+    /* Generic post-submit message on the forgot/reset-password screens —
+       shares the same slot as the form fields it replaces. */
+    .forgot-sent-msg {
+      background: rgba(37, 99, 235, 0.1);
+      border: 1px solid rgba(37, 99, 235, 0.3);
+      color: var(--text);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      font-size: var(--fs-sm);
+      line-height: 1.6;
+      margin: 0 0 20px;
+    }
+    #resetTokenInvalidMsg {
+      background: rgba(231, 76, 60, 0.1);
+      border-color: rgba(231, 76, 60, 0.35);
+    }
+
     .auth-toggle button {
       background: none;
       border: none;
@@ -3637,29 +3654,44 @@
         <button class="auth-back-btn" onclick="showAuthForm('choice')" data-i18n="backButton">العودة</button>
       </div>
 
-      <!-- Forgot Password Form -->
+      <!-- Forgot Password Form — one step: email in, generic "check your
+           inbox" message back. Never reveals whether the email is
+           registered, and never lets anyone set a new password without
+           clicking the emailed link (see #reset-form below). -->
       <div id="forgot-form" class="is-hidden">
         <h1 data-i18n="forgotPasswordTitle">استرجاع الحساب</h1>
-        <p data-i18n="forgotPasswordDesc">أدخل بريدك الإلكتروني لاستعادة حسابك</p>
-        <div class="form-group">
+        <p data-i18n="forgotPasswordDesc">أدخل بريدك الإلكتروني وبنرسل لك رابط لإعادة تعيين كلمة المرور</p>
+        <div class="form-group" id="forgotEmailGroup">
           <label data-i18n="emailLabel">البريد الإلكتروني</label>
           <input type="email" id="forgot-email" placeholder="your@email.com" />
         </div>
-        <div id="forgotPasswordStep" class="is-hidden">
-          <div class="form-group">
-            <label data-i18n="newPasswordLabel">كلمة المرور الجديدة</label>
-            <input type="password" id="forgot-new-password" placeholder="••••••" />
-          </div>
-          <div class="form-group">
-            <label data-i18n="confirmPasswordLabel">تأكيد كلمة المرور الجديدة</label>
-            <input type="password" id="forgot-confirm-password" placeholder="••••••" />
-          </div>
-        </div>
-        <button class="btn" id="forgotPasswordActionBtn" onclick="handleForgotPassword()" data-i18n="recoverButton">استرجاع كلمة المرور</button>
+        <p id="forgotPasswordSentMsg" class="forgot-sent-msg is-hidden" data-i18n="forgotPasswordSentMsg">إذا كان هذا البريد مسجلاً لدينا، أرسلنا إليه رابط إعادة تعيين كلمة المرور. تحقق من بريدك (وملف الرسائل غير المرغوب فيها).</p>
+        <button class="btn" id="forgotPasswordActionBtn" onclick="handleForgotPassword()" data-i18n="recoverButton">إرسال رابط الاسترجاع</button>
         <div class="auth-toggle">
           <button onclick="showAuthForm('forgot-username')" data-i18n="forgotUsernameLink">نسيت البريد الإلكتروني بدلاً من ذلك؟</button>
         </div>
         <button class="auth-back-btn" onclick="showAuthForm('choice')" data-i18n="backButton">العودة</button>
+      </div>
+
+      <!-- Reset Password Form — only reachable via the token link the email
+           in #forgot-form sends (?resetToken=... in the URL); see
+           initApp()'s query-param check and handleTokenPasswordReset(). -->
+      <div id="reset-form" class="is-hidden">
+        <h1 data-i18n="resetPasswordTitle">تعيين كلمة مرور جديدة</h1>
+        <p data-i18n="resetPasswordDesc">أدخل كلمة مرور جديدة لحسابك</p>
+        <div id="resetPasswordFields">
+          <div class="form-group">
+            <label data-i18n="newPasswordLabel">كلمة المرور الجديدة</label>
+            <input type="password" id="reset-new-password" placeholder="••••••" />
+          </div>
+          <div class="form-group">
+            <label data-i18n="confirmPasswordLabel">تأكيد كلمة المرور الجديدة</label>
+            <input type="password" id="reset-confirm-password" placeholder="••••••" />
+          </div>
+          <button class="btn" onclick="handleTokenPasswordReset()" data-i18n="resetPasswordButton">تحديث كلمة المرور</button>
+        </div>
+        <p id="resetTokenInvalidMsg" class="forgot-sent-msg is-hidden" data-i18n="resetTokenInvalidMsg">رابط إعادة التعيين غير صالح أو منتهي الصلاحية. اطلب رابطاً جديداً.</p>
+        <button class="auth-back-btn" onclick="showAuthForm('forgot')" data-i18n="backButton">العودة</button>
       </div>
 
       <!-- Forgot Username (Email) Form -->
@@ -4760,8 +4792,12 @@
         forgotPassword: 'نسيت كلمة المرور؟',
         backButton: 'العودة',
         forgotPasswordTitle: 'استرجاع الحساب',
-        forgotPasswordDesc: 'أدخل بريدك الإلكتروني لاستعادة حسابك',
-        recoverButton: 'استرجاع كلمة المرور',
+        forgotPasswordDesc: 'أدخل بريدك الإلكتروني وبنرسل لك رابط لإعادة تعيين كلمة المرور',
+        forgotPasswordSentMsg: 'إذا كان هذا البريد مسجلاً لدينا، أرسلنا إليه رابط إعادة تعيين كلمة المرور. تحقق من بريدك (وملف الرسائل غير المرغوب فيها).',
+        resetPasswordTitle: 'تعيين كلمة مرور جديدة',
+        resetPasswordDesc: 'أدخل كلمة مرور جديدة لحسابك',
+        resetTokenInvalidMsg: 'رابط إعادة التعيين غير صالح أو منتهي الصلاحية. اطلب رابطاً جديداً.',
+        recoverButton: 'إرسال رابط الاسترجاع',
         resetPasswordButton: 'تحديث كلمة المرور',
         newPasswordLabel: 'كلمة المرور الجديدة',
         confirmPasswordLabel: 'تأكيد كلمة المرور الجديدة',
@@ -5261,8 +5297,12 @@
         forgotPassword: 'Lost Your Account?',
         backButton: 'Back',
         forgotPasswordTitle: 'Recover Account',
-        forgotPasswordDesc: 'Enter your email to recover your account',
-        recoverButton: 'Recover Password',
+        forgotPasswordDesc: "Enter your email and we'll send you a password reset link",
+        forgotPasswordSentMsg: "If that email is registered with us, we've sent a password reset link to it. Check your inbox (and spam folder).",
+        resetPasswordTitle: 'Set a New Password',
+        resetPasswordDesc: 'Enter a new password for your account',
+        resetTokenInvalidMsg: 'This reset link is invalid or has expired. Request a new one.',
+        recoverButton: 'Send Reset Link',
         resetPasswordButton: 'Update Password',
         newPasswordLabel: 'New Password',
         confirmPasswordLabel: 'Confirm New Password',
@@ -5805,9 +5845,9 @@
     // the message bubbles themselves so the sidebar list can be rebuilt after a reload.
     let conversations = {};
     let currentConversationId = null;
-    // Holds the matched user record mid-flow while resetting a forgotten password
-    // (set after step 1 verifies the email, cleared once the reset completes or is cancelled).
-    let forgotPasswordUser = null;
+    // The proof-of-ownership token from an emailed password-reset link —
+    // read from the URL in initApp(), consumed by handleTokenPasswordReset().
+    let pendingResetToken = null;
     let currentView = 'grid';
     let searchQuery = '';
     let currentSort = 'newest';
@@ -5844,6 +5884,21 @@
     // ===== INITIALIZATION =====
     async function initApp() {
       loadData();
+
+      // A password-reset link opens here with ?resetToken=... — handle that
+      // before anything else (no session/product loading needed) and go
+      // straight to the "set new password" screen, regardless of whether
+      // this browser happens to have an existing session.
+      const resetTokenFromUrl = new URLSearchParams(location.search).get('resetToken');
+      if (resetTokenFromUrl) {
+        pendingResetToken = resetTokenFromUrl;
+        applyLanguage(currentLanguage);
+        document.getElementById('app').style.display = 'none';
+        document.getElementById('page-auth').classList.add('active');
+        showAuthForm('reset');
+        return;
+      }
+
       // A token from a previous visit — confirm it's still valid (and pick
       // up any server-side changes, like isAdmin being revoked) rather than
       // trusting the cached copy blindly. On a network error, fall back to
@@ -6083,10 +6138,11 @@
       document.getElementById('register-form').style.display = formType === 'register' ? 'block' : 'none';
       document.getElementById('forgot-form').style.display = formType === 'forgot' ? 'block' : 'none';
       document.getElementById('forgot-username-form').style.display = formType === 'forgot-username' ? 'block' : 'none';
+      document.getElementById('reset-form').style.display = formType === 'reset' ? 'block' : 'none';
 
       // Leaving the password-reset flow (or re-entering it fresh) always clears its state,
       // so a half-finished reset never lingers into the next visit.
-      if (formType !== 'forgot') resetForgotPasswordForm();
+      if (formType !== 'forgot' && formType !== 'reset') resetForgotPasswordForm();
       if (formType === 'forgot-username') document.getElementById('forgot-username-phone').value = '';
     }
 
@@ -6138,46 +6194,44 @@
     // /api/auth/reset-password — knowing the email is still the only "verification" there is,
     // same trust level as before, just hashed server-side now instead of overwritten in
     // localStorage). Step 1 verifies the email; step 2 sets a new password directly.
+    // Sends the reset email if that address is registered — server responds
+    // with the same generic "sent" message either way (see server.js
+    // handleForgotPassword), so this never reveals which emails have
+    // accounts here. The actual password change only happens through the
+    // link that email contains (#reset-form / handleTokenPasswordReset,
+    // below), never inline on this screen.
     async function handleForgotPassword() {
-      if (!forgotPasswordUser) {
-        const email = document.getElementById('forgot-email').value.trim();
-        if (!email) {
-          alert(t('enterEmailAlert', 'Please enter your email'));
-          return;
-        }
-
-        let data;
-        try {
-          const res = await fetch(`${API_BASE}/api/auth/forgot-password`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email }),
-          });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          data = await res.json();
-        } catch (e) {
-          console.error('Forgot-password lookup failed:', e);
-          alert(currentLanguage === 'ar' ? 'تعذّر الاتصال بالخادم.' : 'Could not reach the server.');
-          return;
-        }
-        if (!data.found) {
-          alert(t('emailNotRegisteredAlert', 'Email not registered'));
-          return;
-        }
-
-        // Step 1 passed: lock the email in and reveal the new-password fields.
-        forgotPasswordUser = { email };
-        document.getElementById('forgot-email').disabled = true;
-        document.getElementById('forgotPasswordStep').classList.remove('is-hidden');
-        document.getElementById('forgotPasswordActionBtn').textContent = t('resetPasswordButton', 'Update Password');
-        document.getElementById('forgot-new-password').focus();
+      const email = document.getElementById('forgot-email').value.trim();
+      if (!email) {
+        alert(t('enterEmailAlert', 'Please enter your email'));
         return;
       }
+      const btn = document.getElementById('forgotPasswordActionBtn');
+      btn.disabled = true;
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/forgot-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      } catch (e) {
+        console.error('Forgot-password request failed:', e);
+        alert(currentLanguage === 'ar' ? 'تعذّر الاتصال بالخادم.' : 'Could not reach the server.');
+        btn.disabled = false;
+        return;
+      }
+      document.getElementById('forgotEmailGroup').classList.add('is-hidden');
+      document.getElementById('forgotPasswordSentMsg').classList.remove('is-hidden');
+      btn.classList.add('is-hidden');
+    }
 
-      // Step 2: apply the new password.
-      const newPassword = document.getElementById('forgot-new-password').value;
-      const confirmPassword = document.getElementById('forgot-confirm-password').value;
-
+    // Reads pendingResetToken (set in initApp from the emailed link's
+    // ?resetToken= query param) — the server treats it as the only proof of
+    // email ownership, single-use and time-limited.
+    async function handleTokenPasswordReset() {
+      const newPassword = document.getElementById('reset-new-password').value;
+      const confirmPassword = document.getElementById('reset-confirm-password').value;
       if (!newPassword || newPassword.length < 4) {
         alert(t('passwordTooShortAlert', 'Password must be at least 4 characters'));
         return;
@@ -6186,39 +6240,48 @@
         alert(t('passwordMismatchAlert', 'Passwords do not match'));
         return;
       }
-
-      const recoveredEmail = forgotPasswordUser.email;
+      let res;
       try {
-        const res = await fetch(`${API_BASE}/api/auth/reset-password`, {
+        res = await fetch(`${API_BASE}/api/auth/reset-password`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: recoveredEmail, newPassword }),
+          body: JSON.stringify({ token: pendingResetToken, newPassword }),
         });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
       } catch (e) {
         console.error('Password reset failed:', e);
         alert(currentLanguage === 'ar' ? 'تعذّر تحديث كلمة المرور.' : 'Could not update the password.');
         return;
       }
-
+      if (res.status === 400 || res.status === 404) {
+        // Invalid, expired, or already-used token.
+        document.getElementById('resetPasswordFields').classList.add('is-hidden');
+        document.getElementById('resetTokenInvalidMsg').classList.remove('is-hidden');
+        return;
+      }
+      if (!res.ok) {
+        alert(currentLanguage === 'ar' ? 'تعذّر تحديث كلمة المرور.' : 'Could not update the password.');
+        return;
+      }
       alert(t('passwordResetSuccessAlert', 'Password updated successfully. You can now log in.'));
-      resetForgotPasswordForm();
+      pendingResetToken = null;
+      // Drop ?resetToken from the URL so refreshing/sharing it doesn't replay this screen.
+      history.replaceState(null, '', location.pathname + location.hash);
       showAuthForm('login');
-      document.getElementById('login-email').value = recoveredEmail;
-      document.getElementById('login-password').focus();
     }
 
     // Clears the forgot-password form back to its step-1 state, whether the reset completed,
     // was cancelled, or the user navigated away mid-flow.
     function resetForgotPasswordForm() {
-      forgotPasswordUser = null;
-      const emailInput = document.getElementById('forgot-email');
-      emailInput.value = '';
-      emailInput.disabled = false;
-      document.getElementById('forgot-new-password').value = '';
-      document.getElementById('forgot-confirm-password').value = '';
-      document.getElementById('forgotPasswordStep').classList.add('is-hidden');
-      document.getElementById('forgotPasswordActionBtn').textContent = t('recoverButton', 'Recover Password');
+      document.getElementById('forgot-email').value = '';
+      document.getElementById('forgotEmailGroup').classList.remove('is-hidden');
+      document.getElementById('forgotPasswordSentMsg').classList.add('is-hidden');
+      const btn = document.getElementById('forgotPasswordActionBtn');
+      btn.classList.remove('is-hidden');
+      btn.disabled = false;
+      document.getElementById('reset-new-password').value = '';
+      document.getElementById('reset-confirm-password').value = '';
+      document.getElementById('resetPasswordFields').classList.remove('is-hidden');
+      document.getElementById('resetTokenInvalidMsg').classList.add('is-hidden');
     }
 
     // Forgot Username (email) Recovery — looks accounts up by phone number, since email is
@@ -6295,15 +6358,6 @@
           el.setAttribute('aria-label', translations[lang][key]);
         }
       });
-
-      // The forgot-password button's label depends on which step of the reset flow is active,
-      // which the static data-i18n pass above doesn't know about — re-sync it here.
-      const forgotBtn = document.getElementById('forgotPasswordActionBtn');
-      if (forgotBtn) {
-        forgotBtn.textContent = forgotPasswordUser
-          ? t('resetPasswordButton', 'Update Password')
-          : t('recoverButton', 'Recover Password');
-      }
 
       // Re-render dynamic content so runtime-generated strings follow the active language.
       if (currentUser) {

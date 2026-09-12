@@ -370,13 +370,14 @@ async function handleChat(req, res) {
 
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const SESSIONS_FILE = path.join(DATA_DIR, 'sessions.json');
+const PASSWORD_RESETS_FILE = path.join(DATA_DIR, 'password-resets.json');
 const AUTH_MAX_BODY_BYTES = 20_000; // plain text fields only
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+const RESET_TOKEN_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
-// Same default admin the client used to seed into localStorage (id: 1,
-// admin@bikestore.com / admin123) — kept so anyone who already knew those
-// demo credentials still gets in after this migration. Change the password
-// after first login.
+// id: 1, isAdmin: true — the very first account, auto-created the first
+// time users.json doesn't exist yet. See seedDefaultUsers() below for how
+// its email/password are chosen.
 // The seed admin account's credentials used to be the hardcoded literal
 // "admin@bikestore.com" / "admin123" — fine for local dev, but this file is
 // committed to a *public* repo, so a fixed, published password would let
@@ -499,6 +500,105 @@ function createSession(data) {
 function deleteSession(token) {
   sessions.delete(token);
   saveSessionsToDisk();
+}
+
+// ---- Password reset tokens ---------------------------------------------------
+// token -> { userId, expiresAt }. Same load/save/persist pattern as
+// sessions above, but short-lived (RESET_TOKEN_TTL_MS) and single-use: a
+// token is deleted the moment it's redeemed in handleResetPassword, and
+// expired ones are dropped on load. This is the *only* proof of email
+// ownership the reset flow accepts — see handleForgotPassword/
+// handleResetPassword below.
+let passwordResets = new Map();
+
+function loadPasswordResetsFromDisk() {
+  if (!fs.existsSync(PASSWORD_RESETS_FILE)) return new Map();
+  try {
+    const parsed = JSON.parse(fs.readFileSync(PASSWORD_RESETS_FILE, 'utf8'));
+    const now = Date.now();
+    return new Map((Array.isArray(parsed) ? parsed : []).filter(([, r]) => r.expiresAt > now));
+  } catch (e) {
+    console.error('Error reading password-resets.json, starting with none:', e);
+    return new Map();
+  }
+}
+
+function savePasswordResetsToDisk() {
+  fs.writeFileSync(PASSWORD_RESETS_FILE, JSON.stringify([...passwordResets.entries()], null, 2));
+}
+
+passwordResets = loadPasswordResetsFromDisk();
+
+function createPasswordResetToken(userId) {
+  const token = crypto.randomBytes(32).toString('hex');
+  passwordResets.set(token, { userId, expiresAt: Date.now() + RESET_TOKEN_TTL_MS });
+  savePasswordResetsToDisk();
+  return token;
+}
+
+// Returns the userId for a still-valid token, or null — and always deletes
+// the token either way, so a single link can only ever be used once (an
+// expired one is cleaned up here rather than left for the next load).
+function consumePasswordResetToken(token) {
+  const record = passwordResets.get(token);
+  if (!record) return null;
+  passwordResets.delete(token);
+  savePasswordResetsToDisk();
+  if (record.expiresAt <= Date.now()) return null;
+  return record.userId;
+}
+
+// ---- Transactional email (Resend) --------------------------------------------
+// Plain HTTPS call, no SDK — same "no extra dependency" approach as the rest
+// of this file. Set RESEND_API_KEY (and optionally RESEND_FROM /
+// APP_PUBLIC_URL) as real environment variables in production. Without a
+// key, this logs instead of sending — see the warning in
+// handleForgotPassword when that happens.
+const https = require('https');
+
+function sendEmail({ to, subject, html }) {
+  return new Promise((resolve, reject) => {
+    const from = process.env.RESEND_FROM || 'Pedalex <onboarding@resend.dev>';
+    const payload = JSON.stringify({ from, to, subject, html });
+    const req = https.request(
+      {
+        hostname: 'api.resend.com',
+        path: '/emails',
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(payload),
+        },
+      },
+      (res) => {
+        let body = '';
+        res.on('data', (chunk) => { body += chunk; });
+        res.on('end', () => {
+          if (res.statusCode >= 200 && res.statusCode < 300) resolve();
+          else reject(new Error(`Resend API ${res.statusCode}: ${body}`));
+        });
+      }
+    );
+    req.on('error', reject);
+    req.write(payload);
+    req.end();
+  });
+}
+
+function buildResetEmailHtml(name, resetUrl) {
+  const safeName = String(name || '').replace(/[<>&]/g, '');
+  return `
+    <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+      <h2 style="color:#0F172A;">Pedalex</h2>
+      <p>Hi ${safeName || 'there'},</p>
+      <p>We received a request to reset your Pedalex password. Click the button below to choose a new one — this link works once and expires in 30 minutes.</p>
+      <p style="text-align:center; margin: 32px 0;">
+        <a href="${resetUrl}" style="background:#2563EB; color:#fff; padding:14px 28px; border-radius:999px; text-decoration:none; font-weight:bold;">Reset Password</a>
+      </p>
+      <p style="color:#64748B; font-size:13px;">If you didn't request this, you can safely ignore this email — your password won't change.</p>
+      <p style="color:#94A3B8; font-size:12px;">${resetUrl}</p>
+    </div>`;
 }
 
 // Resolves the "Authorization: Bearer <token>" header to the real,
@@ -745,20 +845,13 @@ async function handleDeleteUser(req, res, id) {
 // knowing the email address is the only "verification" there is). Only
 // confirms whether an account exists; the response never includes anything
 // sensitive.
+// Always responds with the same generic message regardless of whether the
+// email is registered — both to stop someone enumerating real accounts by
+// email, and because the *only* thing that can actually change a password
+// is a valid emailed token (see handleResetPassword). If it is registered,
+// that token is generated here and mailed out; nothing about it is ever
+// returned in this response.
 async function handleForgotPassword(req, res) {
-  let body;
-  try {
-    body = await readJsonBody(req, AUTH_MAX_BODY_BYTES);
-  } catch (e) {
-    sendJson(res, e.status || 400, { error: e.message });
-    return;
-  }
-  const email = String(body.email || '').trim().toLowerCase();
-  const user = loadUsersFromDisk().find((u) => u.email === email);
-  sendJson(res, 200, user ? { found: true, name: user.name } : { found: false });
-}
-
-async function handleResetPassword(req, res) {
   const ip = req.socket.remoteAddress || 'unknown';
   if (isRateLimited(ip, authRateLimitHits, AUTH_RATE_LIMIT_MAX_REQUESTS)) {
     sendJson(res, 429, { error: 'Too many attempts — please slow down.' });
@@ -772,16 +865,73 @@ async function handleResetPassword(req, res) {
     return;
   }
   const email = String(body.email || '').trim().toLowerCase();
+  const user = loadUsersFromDisk().find((u) => u.email === email);
+  if (user) {
+    const token = createPasswordResetToken(user.id);
+    const appUrl = process.env.APP_PUBLIC_URL || 'https://my-website-bng4.onrender.com';
+    const resetUrl = `${appUrl}/?resetToken=${token}`;
+    if (!process.env.RESEND_API_KEY) {
+      // No email service configured — fail safe (no email sent, no token
+      // leaked to the client) rather than falling back to the old
+      // no-verification behavior. Logged so this is easy to notice locally.
+      console.warn(`RESEND_API_KEY not set — password reset email NOT sent to ${email}. Reset URL (for local testing only): ${resetUrl}`);
+    } else {
+      try {
+        await sendEmail({
+          to: user.email,
+          subject: 'Reset your Pedalex password',
+          html: buildResetEmailHtml(user.name, resetUrl),
+        });
+      } catch (e) {
+        console.error('Failed to send password reset email:', e);
+      }
+    }
+  }
+  sendJson(res, 200, { message: 'If that email is registered, a reset link has been sent.' });
+}
+
+// The token is the only proof of email ownership this accepts — see
+// createPasswordResetToken/consumePasswordResetToken above. Single-use: a
+// second attempt with the same link gets the same "invalid" response as a
+// token that never existed.
+async function handleResetPassword(req, res) {
+  const ip = req.socket.remoteAddress || 'unknown';
+  if (isRateLimited(ip, authRateLimitHits, AUTH_RATE_LIMIT_MAX_REQUESTS)) {
+    sendJson(res, 429, { error: 'Too many attempts — please slow down.' });
+    return;
+  }
+  let body;
+  try {
+    body = await readJsonBody(req, AUTH_MAX_BODY_BYTES);
+  } catch (e) {
+    sendJson(res, e.status || 400, { error: e.message });
+    return;
+  }
+  const token = String(body.token || '');
   const newPassword = String(body.newPassword || '');
   if (newPassword.length < 4) {
     sendJson(res, 400, { error: 'Password must be at least 4 characters.' });
     return;
   }
+  const userId = token ? consumePasswordResetToken(token) : null;
+  if (userId === null) {
+    sendJson(res, 400, { error: 'This reset link is invalid or has expired.' });
+    return;
+  }
   const users = loadUsersFromDisk();
-  const idx = users.findIndex((u) => u.email === email);
-  if (idx === -1) { sendJson(res, 404, { error: 'Email not registered.' }); return; }
+  const idx = users.findIndex((u) => u.id === userId);
+  if (idx === -1) { sendJson(res, 404, { error: 'Account not found.' }); return; }
   users[idx].passwordHash = hashPassword(newPassword);
   saveUsersToDisk(users);
+
+  // A password reset is exactly when you want every *other* logged-in
+  // session (e.g. an attacker's, if this was them getting locked out) to
+  // stop working, not just leave them all valid.
+  for (const [t, session] of sessions.entries()) {
+    if (session.userId === userId) sessions.delete(t);
+  }
+  saveSessionsToDisk();
+
   sendJson(res, 200, { ok: true });
 }
 

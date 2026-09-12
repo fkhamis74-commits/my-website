@@ -10,6 +10,7 @@ rides.json
 clubs.json
 users.json
 sessions.json
+password-resets.json
 
 # Capacitor build artifact — always regenerated from index.html via
 # `npm run cap:sync`, never a source file. Don't commit it, or it can drift
