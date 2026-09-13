@@ -4578,7 +4578,7 @@
             <label data-i18n="contactMessageLabel">رسالتك</label>
             <textarea id="contactMsg" rows="5" placeholder="كيف يمكننا مساعدتك؟" data-i18n-placeholder="contactMessagePlaceholder"></textarea>
           </div>
-          <button class="btn contact-send-btn" onclick="sendContactMessage()" data-i18n="contactSendButton">إرسال الرسالة</button>
+          <button class="btn contact-send-btn" id="contactSendBtn" onclick="sendContactMessage()" data-i18n="contactSendButton">إرسال الرسالة</button>
         </div>
 
       </div>
@@ -5192,6 +5192,7 @@
         revokeAdminButton: 'سحب صلاحية الإدارة',
         lastAdminAlert: 'لا يمكن سحب صلاحية الإدارة من المدير الوحيد المتبقي.',
         fillAllFieldsAlert: 'الرجاء ملء جميع الحقول',
+        contactErrorAlert: 'تعذّر إرسال رسالتك — حاول مرة أخرى بعد قليل.',
         invalidCredentialsAlert: 'البريد أو كلمة المرور غير صحيحة',
         emailRegisteredAlert: 'البريد مسجل بالفعل',
         enterEmailAlert: 'الرجاء إدخال بريدك الإلكتروني',
@@ -5697,6 +5698,7 @@
         revokeAdminButton: 'Revoke Admin',
         lastAdminAlert: 'Cannot remove admin access from the only remaining admin.',
         fillAllFieldsAlert: 'Please fill all fields',
+        contactErrorAlert: "Couldn't send your message — please try again in a moment.",
         invalidCredentialsAlert: 'Invalid email or password',
         emailRegisteredAlert: 'Email already registered',
         enterEmailAlert: 'Please enter your email',
@@ -6817,15 +6819,32 @@
     }
 
     // ===== CONTACT FORM =====
-    function sendContactMessage() {
+    async function sendContactMessage() {
       const name = document.getElementById('contactName').value.trim();
       const email = document.getElementById('contactEmail').value.trim();
       const msg = document.getElementById('contactMsg').value.trim();
       if (!name || !email || !msg) { alert(t('fillAllFieldsAlert', 'Please fill all fields')); return; }
+
+      const btn = document.getElementById('contactSendBtn');
+      btn.disabled = true;
+      try {
+        const res = await fetch(`${API_BASE}/api/contact`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, message: msg }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      } catch (e) {
+        console.error('Contact message failed to send:', e);
+        alert(t('contactErrorAlert', "Couldn't send your message — please try again in a moment."));
+        btn.disabled = false;
+        return;
+      }
       alert(tf('contactSuccessMessage', { name, email }, `Thanks ${name}! We received your message and will contact you at ${email} soon.`));
       document.getElementById('contactName').value = '';
       document.getElementById('contactEmail').value = '';
       document.getElementById('contactMsg').value = '';
+      btn.disabled = false;
     }
 
     function updateUserDisplay() {

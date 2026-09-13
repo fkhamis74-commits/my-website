@@ -218,6 +218,11 @@ function isRateLimited(ip, hitsMap = rateLimitHits, max = RATE_LIMIT_MAX_REQUEST
 const AUTH_RATE_LIMIT_MAX_REQUESTS = 10;
 const authRateLimitHits = new Map();
 
+// Its own bucket too, tighter still — this one sends a real email every
+// successful call, unlike most other endpoints.
+const CONTACT_RATE_LIMIT_MAX_REQUESTS = 5;
+const contactRateLimitHits = new Map();
+
 function validateMessages(messages) {
   if (!Array.isArray(messages) || messages.length === 0) {
     return 'messages must be a non-empty array';
@@ -565,11 +570,11 @@ const https = require('https');
 // reply the user sends still lands in the actual business inbox by making
 // that the reply_to instead — set REPLY_TO_EMAIL if pedalexbikes@gmail.com
 // isn't the right address.
-function sendEmail({ to, subject, html }) {
+function sendEmail({ to, subject, html, replyTo }) {
   return new Promise((resolve, reject) => {
     const from = process.env.RESEND_FROM || 'Pedalex <onboarding@resend.dev>';
-    const replyTo = process.env.REPLY_TO_EMAIL || 'pedalexbikes@gmail.com';
-    const payload = JSON.stringify({ from, to, subject, html, reply_to: replyTo });
+    const resolvedReplyTo = replyTo || process.env.REPLY_TO_EMAIL || 'pedalexbikes@gmail.com';
+    const payload = JSON.stringify({ from, to, subject, html, reply_to: resolvedReplyTo });
     const req = https.request(
       {
         hostname: 'api.resend.com',
@@ -596,8 +601,20 @@ function sendEmail({ to, subject, html }) {
   });
 }
 
+// Minimal HTML-escaping for text dropped into an email body — server.js has
+// no other HTML-templating helper (the client's escapeHtml() only runs in
+// the browser), and this one's only job is stopping visitor-typed text from
+// breaking out of the surrounding markup.
+function escapeHtmlForEmail(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 function buildResetEmailHtml(name, resetUrl) {
-  const safeName = String(name || '').replace(/[<>&]/g, '');
+  const safeName = escapeHtmlForEmail(name);
   return `
     <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
       <h2 style="color:#0F172A;">Pedalex</h2>
@@ -609,6 +626,63 @@ function buildResetEmailHtml(name, resetUrl) {
       <p style="color:#64748B; font-size:13px;">If you didn't request this, you can safely ignore this email — your password won't change.</p>
       <p style="color:#94A3B8; font-size:12px;">${resetUrl}</p>
     </div>`;
+}
+
+function buildContactEmailHtml(name, email, message) {
+  return `
+    <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; padding: 24px;">
+      <h2 style="color:#0F172A;">New message from the Pedalex website</h2>
+      <p><strong>From:</strong> ${escapeHtmlForEmail(name)} (${escapeHtmlForEmail(email)})</p>
+      <p style="white-space: pre-wrap; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:12px; padding:16px;">${escapeHtmlForEmail(message)}</p>
+      <p style="color:#94A3B8; font-size:12px;">Reply to this email to answer ${escapeHtmlForEmail(name)} directly — Reply-To is already set to their address.</p>
+    </div>`;
+}
+
+const CONTACT_MAX_BODY_BYTES = 20_000; // plain text fields only
+
+// The "Contact Us" form (About page) — forwards straight to the business
+// inbox (CONTACT_TO_EMAIL, defaulting to pedalexbikes@gmail.com) with
+// Reply-To set to the visitor's own address, so answering them is just
+// hitting Reply. No account/auth needed — anyone can reach out.
+async function handleContact(req, res) {
+  const ip = req.socket.remoteAddress || 'unknown';
+  if (isRateLimited(ip, contactRateLimitHits, CONTACT_RATE_LIMIT_MAX_REQUESTS)) {
+    sendJson(res, 429, { error: 'Too many messages — please slow down.' });
+    return;
+  }
+  let body;
+  try {
+    body = await readJsonBody(req, CONTACT_MAX_BODY_BYTES);
+  } catch (e) {
+    sendJson(res, e.status || 400, { error: e.message });
+    return;
+  }
+  const name = String(body.name || '').trim().slice(0, 200);
+  const email = String(body.email || '').trim().slice(0, 200);
+  const message = String(body.message || '').trim().slice(0, 5000);
+  if (!name || !email || !message) {
+    sendJson(res, 400, { error: 'Name, email, and message are all required.' });
+    return;
+  }
+  const to = process.env.CONTACT_TO_EMAIL || 'pedalexbikes@gmail.com';
+  if (!process.env.RESEND_API_KEY) {
+    console.warn(`RESEND_API_KEY not set — contact message from ${email} NOT emailed. Message: ${message}`);
+    sendJson(res, 200, { ok: true });
+    return;
+  }
+  try {
+    await sendEmail({
+      to,
+      subject: `Pedalex contact form: ${name}`,
+      html: buildContactEmailHtml(name, email, message),
+      replyTo: email,
+    });
+  } catch (e) {
+    console.error('Failed to send contact email:', e);
+    sendJson(res, 502, { error: 'Could not send your message right now — please try again shortly.' });
+    return;
+  }
+  sendJson(res, 200, { ok: true });
 }
 
 // Resolves the "Authorization: Bearer <token>" header to the real,
@@ -1631,6 +1705,8 @@ const server = http.createServer((req, res) => {
     handleChat(req, res);
     return;
   }
+
+  if (req.method === 'POST' && urlPath === '/api/contact') { handleContact(req, res); return; }
 
   if (req.method === 'POST' && urlPath === '/api/auth/register') { handleRegister(req, res); return; }
   if (req.method === 'POST' && urlPath === '/api/auth/login') { handleLogin(req, res); return; }
