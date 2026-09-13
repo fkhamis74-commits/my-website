@@ -382,15 +382,17 @@ const RESET_TOKEN_TTL_MS = 30 * 60 * 1000; // 30 minutes
 // "admin@bikestore.com" / "admin123" — fine for local dev, but this file is
 // committed to a *public* repo, so a fixed, published password would let
 // anyone who reads the source log in as admin on any deployment that hasn't
-// overwritten it. Now: the email/password come from ADMIN_SEED_EMAIL /
-// ADMIN_SEED_PASSWORD (set these in Render's environment for the live
-// deploy) and fall back to a random password — printed to the server log
-// *once*, on first boot — so a deploy started with no env vars set still
-// isn't sitting on a public default. Either way, this only ever runs once
-// (see loadUsersFromDisk): it seeds users.json the first time it doesn't
-// exist, and never runs again once a real users.json is on disk.
+// overwritten it. Now: the email defaults to the real business address
+// (pedalexbikes@gmail.com) and the password comes from ADMIN_SEED_PASSWORD
+// (set this in Render's environment for the live deploy) — or, if that's
+// unset, a random password printed to the server log *once*, on first
+// boot, so a deploy started with no env vars set still isn't sitting on a
+// public default. Override either with ADMIN_SEED_EMAIL / ADMIN_SEED_PASSWORD.
+// This only ever runs once (see loadUsersFromDisk): it seeds users.json the
+// first time it doesn't exist, and never runs again once a real users.json
+// is on disk.
 function seedDefaultUsers() {
-  const email = process.env.ADMIN_SEED_EMAIL || 'admin@bikestore.com';
+  const email = process.env.ADMIN_SEED_EMAIL || 'pedalexbikes@gmail.com';
   let password = process.env.ADMIN_SEED_PASSWORD;
   if (!password) {
     password = crypto.randomBytes(9).toString('base64url'); // 12 random chars
@@ -556,10 +558,18 @@ function consumePasswordResetToken(token) {
 // handleForgotPassword when that happens.
 const https = require('https');
 
+// Resend's free tier can only send "from" a domain you've verified with
+// them by DNS — a plain Gmail address (or any address on a domain you
+// don't own) can never be a valid "from" there, only onboarding@resend.dev
+// (their shared sandbox sender) until a real domain is verified. So a
+// reply the user sends still lands in the actual business inbox by making
+// that the reply_to instead — set REPLY_TO_EMAIL if pedalexbikes@gmail.com
+// isn't the right address.
 function sendEmail({ to, subject, html }) {
   return new Promise((resolve, reject) => {
     const from = process.env.RESEND_FROM || 'Pedalex <onboarding@resend.dev>';
-    const payload = JSON.stringify({ from, to, subject, html });
+    const replyTo = process.env.REPLY_TO_EMAIL || 'pedalexbikes@gmail.com';
+    const payload = JSON.stringify({ from, to, subject, html, reply_to: replyTo });
     const req = https.request(
       {
         hostname: 'api.resend.com',
