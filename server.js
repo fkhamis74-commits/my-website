@@ -952,7 +952,7 @@ async function handleForgotPassword(req, res) {
   const user = loadUsersFromDisk().find((u) => u.email === email);
   if (user) {
     const token = createPasswordResetToken(user.id);
-    const appUrl = process.env.APP_PUBLIC_URL || 'https://my-website-bng4.onrender.com';
+    const appUrl = process.env.APP_PUBLIC_URL || 'https://pedalexbikes.com';
     const resetUrl = `${appUrl}/?resetToken=${token}`;
     if (!process.env.RESEND_API_KEY) {
       // No email service configured — fail safe (no email sent, no token
