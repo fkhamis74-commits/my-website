@@ -1055,93 +1055,12 @@ function maskEmail(email) {
 const PRODUCTS_FILE = path.join(DATA_DIR, 'products.json');
 const PRODUCT_MAX_BODY_BYTES = 8_000_000; // generous — product images are base64-encoded
 
-// Same starting inventory the app used to seed into localStorage, so a fresh
-// deployment (or a deleted products.json) shows the same demo listings.
-const DEMO_PRODUCTS = [
-  {
-    id: 10001,
-    name: 'Cervelo R5 Disc',
-    type: 'road',
-    price: 14500,
-    originalPrice: 22000,
-    size: '54 cm (M)',
-    condition: 'ممتازة (مفحوصة)',
-    groupset: 'Shimano Ultegra Di2',
-    frameMaterial: 'Carbon',
-    location: 'دبي - الإمارات',
-    locationEn: 'Dubai - UAE',
-    sellerName: 'فهد عبدالله',
-    sellerNameEn: 'Fahad Abdullah',
-    sellerPhone: '+971500000001',
-    sellerEmail: 'seller1@example.com',
-    sellerRating: '4.9 ★',
-    image: 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=600&q=80',
-    notes: 'دراجة طريق احترافية بحالة ممتازة، الصيانة دورية مع غيارات إلكترونية Di2، لم تتعرض لأي حوادث.',
-    notesEn: 'High-performance road bike in excellent condition. Regularly serviced with electronic Di2 shifting and no crash history.',
-    createdAt: '2026-07-30T10:00:00.000Z',
-    favorites: 0,
-    sellerId: 9000,
-    availability: 'available',
-    status: 'approved',
-  },
-  {
-    id: 10002,
-    name: 'Scott Spark RC Team',
-    type: 'mountain',
-    price: 9800,
-    originalPrice: 15000,
-    size: 'L',
-    condition: 'جيدة جداً',
-    groupset: 'SRAM GX Eagle',
-    frameMaterial: 'Carbon',
-    location: 'أبوظبي - الإمارات',
-    locationEn: 'Abu Dhabi - UAE',
-    sellerName: 'علي المنصوري',
-    sellerNameEn: 'Ali Al Mansoori',
-    sellerPhone: '+971500000002',
-    sellerEmail: 'seller2@example.com',
-    sellerRating: '4.8 ★',
-    image: 'https://images.unsplash.com/photo-1532298229144-0ec0c57515c7?auto=format&fit=crop&w=600&q=80',
-    notes: 'دراجة جبلية بامتياز مع نظام تعليق مزدوج كامل ومناسبة للمسارات الجبلية والوعرة.',
-    notesEn: 'Top-tier mountain bike with full dual suspension, ideal for rough and technical trails.',
-    createdAt: '2026-07-31T10:00:00.000Z',
-    favorites: 0,
-    sellerId: 9001,
-    availability: 'available',
-    status: 'approved',
-  },
-  {
-    id: 10003,
-    name: 'Specialized Sirrus X 4.0',
-    type: 'hybrid',
-    price: 3200,
-    originalPrice: 4800,
-    size: 'M',
-    condition: 'ممتازة',
-    groupset: 'Shimano Deore',
-    frameMaterial: 'Aluminum',
-    location: 'الشارقة - الإمارات',
-    locationEn: 'Sharjah - UAE',
-    sellerName: 'أحمد الحمادي',
-    sellerNameEn: 'Ahmed Al Hammadi',
-    sellerPhone: '+971500000003',
-    sellerEmail: 'seller3@example.com',
-    sellerRating: '4.7 ★',
-    image: 'https://images.unsplash.com/photo-1507035895480-2b3156c31fc8?auto=format&fit=crop&w=600&q=80',
-    notes: 'دراجة هجين خفيفة ومريحة جداً للتنقل اليومي والتمارين الرياضية داخل المدينة.',
-    notesEn: 'Light and comfortable hybrid bike, perfect for city commuting and everyday fitness rides.',
-    createdAt: '2026-08-01T10:00:00.000Z',
-    favorites: 0,
-    sellerId: 9002,
-    availability: 'reserved',
-    status: 'approved',
-  },
-];
-
+// A fresh deployment (or a deleted products.json) starts with no listings —
+// only real ones from real users.
 function loadProductsFromDisk() {
   if (!fs.existsSync(PRODUCTS_FILE)) {
-    fs.writeFileSync(PRODUCTS_FILE, JSON.stringify(DEMO_PRODUCTS, null, 2));
-    return DEMO_PRODUCTS;
+    fs.writeFileSync(PRODUCTS_FILE, '[]');
+    return [];
   }
   try {
     const parsed = JSON.parse(fs.readFileSync(PRODUCTS_FILE, 'utf8'));
@@ -1298,95 +1217,11 @@ async function handleDeleteProduct(req, res, id) {
 const RIDES_FILE = path.join(DATA_DIR, 'rides.json');
 const RIDE_MAX_BODY_BYTES = 200_000; // plain text/number fields only, no images
 
-// Neutral example rides for a fresh deployment — organizerId values (8000s)
-// are demo-only and never collide with a real registered user's id (assigned
-// via Date.now() at signup), so these never show as "mine" for an actual
-// visitor, same as DEMO_PRODUCTS' sellerId convention above.
-const DEMO_RIDES = [
-  {
-    id: 1,
-    title: 'طلعة صباحية - مضمار جميرا',
-    track: 'مضمار جميرا للدراجات',
-    location: 'دبي - جميرا',
-    startPoint: 'بوابة 2 - المضمار',
-    date: '2026-08-15',
-    time: '06:00',
-    distance: 25,
-    difficulty: 'medium',
-    speed: '25-28 كم/س',
-    bikeType: 'road',
-    gender: 'mixed',
-    level: 'intermediate',
-    maxParticipants: 8,
-    notes: 'الرجاء الالتزام بوقت الانطلاق وارتداء الخوذة.',
-    organizerId: 8000,
-    organizerName: 'سلطان الكعبي',
-    createdAt: '2026-08-01T10:00:00.000Z',
-    participants: [
-      { userId: 8000, name: 'سلطان الكعبي' },
-      { userId: null, name: 'محمد راشد' },
-      { userId: null, name: 'خالد العلي' },
-    ],
-    pendingRequests: [],
-  },
-  {
-    id: 2,
-    title: 'طلعة جبلية - مسار الحجر',
-    track: 'مسار الحجر الجبلي',
-    location: 'رأس الخيمة',
-    startPoint: 'مدخل المسار الرئيسي',
-    date: '2026-08-20',
-    time: '05:30',
-    distance: 40,
-    difficulty: 'hard',
-    speed: '18-22 كم/س',
-    bikeType: 'mtb',
-    gender: 'male',
-    level: 'advanced',
-    maxParticipants: 6,
-    notes: 'مسار جبلي وعر، يفضل وجود خبرة سابقة.',
-    organizerId: 8001,
-    organizerName: 'عبدالله سعيد',
-    createdAt: '2026-08-02T10:00:00.000Z',
-    participants: [
-      { userId: 8001, name: 'عبدالله سعيد' },
-    ],
-    pendingRequests: [
-      { id: 101, userId: null, name: 'ياسر فهد', note: 'دراجة MTB، مستوى متقدم، أرغب بالانضمام.' },
-      { id: 102, userId: null, name: 'نواف حمد', note: 'شاركت في طلعات جبلية سابقة.' },
-    ],
-  },
-  {
-    id: 3,
-    title: 'طلعة مسائية خفيفة - كورنيش أبوظبي',
-    track: 'كورنيش أبوظبي',
-    location: 'أبوظبي',
-    startPoint: 'قرب مرسى أبوظبي',
-    date: '2026-08-12',
-    time: '17:30',
-    distance: 15,
-    difficulty: 'easy',
-    speed: '18-20 كم/س',
-    bikeType: 'any',
-    gender: 'mixed',
-    level: 'beginner',
-    maxParticipants: 12,
-    notes: '',
-    organizerId: 8002,
-    organizerName: 'مريم النعيمي',
-    createdAt: '2026-08-03T10:00:00.000Z',
-    participants: [
-      { userId: 8002, name: 'مريم النعيمي' },
-      { userId: null, name: 'سارة أحمد' },
-    ],
-    pendingRequests: [],
-  },
-];
-
+// A fresh deployment starts with no rides — only real ones from real users.
 function loadRidesFromDisk() {
   if (!fs.existsSync(RIDES_FILE)) {
-    fs.writeFileSync(RIDES_FILE, JSON.stringify(DEMO_RIDES, null, 2));
-    return DEMO_RIDES;
+    fs.writeFileSync(RIDES_FILE, '[]');
+    return [];
   }
   try {
     const parsed = JSON.parse(fs.readFileSync(RIDES_FILE, 'utf8'));
@@ -1526,37 +1361,10 @@ async function handleDeleteRide(req, res, id) {
 const CLUBS_FILE = path.join(DATA_DIR, 'clubs.json');
 const CLUB_MAX_BODY_BYTES = 50_000; // plain text fields only
 
-const DEMO_CLUBS = [
-  {
-    id: 1,
-    name: 'مجموعة القدرة الصباحية (Al Qudra Riders)',
-    locationBadge: 'دبي - مسار القدرة',
-    level: 'متوسط / محترف',
-    description: 'تمارين أسبوعية منتظمة صباح كل سبت وأحد. متوسط السرعة بين 32 إلى 36 كم/ساعة.',
-    schedule: 'السبت والأحد',
-    whatsappLink: 'https://chat.whatsapp.com/',
-    ownerId: 8100,
-    ownerName: 'مجتمع القدرة',
-    createdAt: '2026-08-01T10:00:00.000Z',
-  },
-  {
-    id: 2,
-    name: 'مجتمع الحديريات للدراجات (Hudayriyat Social)',
-    locationBadge: 'أبوظبي - جزيرة الحديريات',
-    level: 'جميع المستويات',
-    description: 'جولات مسائية خفيفة ومناسبة للمبتدئين والمتوسطين للاستمتاع بركوب الدراجة والتعارف.',
-    schedule: 'الثلاثاء والخميس',
-    whatsappLink: 'https://chat.whatsapp.com/',
-    ownerId: 8101,
-    ownerName: 'مجتمع الحديريات',
-    createdAt: '2026-08-02T10:00:00.000Z',
-  },
-];
-
 function loadClubsFromDisk() {
   if (!fs.existsSync(CLUBS_FILE)) {
-    fs.writeFileSync(CLUBS_FILE, JSON.stringify(DEMO_CLUBS, null, 2));
-    return DEMO_CLUBS;
+    fs.writeFileSync(CLUBS_FILE, '[]');
+    return [];
   }
   try {
     const parsed = JSON.parse(fs.readFileSync(CLUBS_FILE, 'utf8'));
