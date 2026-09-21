@@ -43,11 +43,19 @@ jobs:
         continue-on-error: true
         uses: actions/deploy-pages@v5
 
+      - name: Wait before retry 2
+        if: steps.deploy-attempt-1.outcome == 'failure'
+        run: sleep 15
+
       - name: Deploy to GitHub Pages (attempt 2)
         if: steps.deploy-attempt-1.outcome == 'failure'
         id: deploy-attempt-2
         continue-on-error: true
         uses: actions/deploy-pages@v5
+
+      - name: Wait before retry 3
+        if: steps.deploy-attempt-1.outcome == 'failure' && steps.deploy-attempt-2.outcome == 'failure'
+        run: sleep 30
 
       - name: Deploy to GitHub Pages (attempt 3)
         if: steps.deploy-attempt-1.outcome == 'failure' && steps.deploy-attempt-2.outcome == 'failure'
