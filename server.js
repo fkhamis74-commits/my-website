@@ -666,8 +666,11 @@ async function handleContact(req, res) {
   }
   const to = process.env.CONTACT_TO_EMAIL || 'pedalexbikes@gmail.com';
   if (!process.env.RESEND_API_KEY) {
-    console.warn(`RESEND_API_KEY not set — contact message from ${email} NOT emailed. Message: ${message}`);
-    sendJson(res, 200, { ok: true });
+    // Don't tell the visitor "sent" when nothing was — that silently loses
+    // their message. Log it (so it's recoverable from the server log) and
+    // report the failure instead.
+    console.warn(`RESEND_API_KEY not set — contact message from ${name} <${email}> NOT emailed. Message: ${message}`);
+    sendJson(res, 503, { error: 'Email is not configured on the server yet.' });
     return;
   }
   try {
