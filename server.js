@@ -27,10 +27,24 @@ const path = require('path');
 const crypto = require('crypto');
 
 const ROOT = __dirname;
-const DATA_DIR = process.env.DATA_DIR || ROOT;
+let DATA_DIR = process.env.DATA_DIR || ROOT;
 // Harmless when DATA_DIR already exists (the default ROOT case); makes sure
 // a freshly-mounted, empty disk doesn't fail the first write.
-fs.mkdirSync(DATA_DIR, { recursive: true });
+try {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+} catch (e) {
+  // DATA_DIR points somewhere this process can't create — almost always
+  // "the persistent disk isn't attached (or is mounted at a different
+  // path)". Crashing here would take the whole site down on deploy, so
+  // fall back to the project folder instead — but shout about it, because
+  // that folder is wiped on every deploy and users' data won't survive.
+  console.error('='.repeat(72));
+  console.error(`DATA_DIR "${DATA_DIR}" is not usable (${e.code || e.message}).`);
+  console.error('Is the persistent disk attached, with its Mount Path equal to DATA_DIR?');
+  console.error(`Falling back to ${ROOT} — data will NOT survive a redeploy until this is fixed.`);
+  console.error('='.repeat(72));
+  DATA_DIR = ROOT;
+}
 const HOST = process.env.HOST || '0.0.0.0';
 const PORT = process.env.PORT || 8080;
 
