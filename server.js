@@ -726,7 +726,15 @@ async function handleContact(req, res) {
     });
   } catch (e) {
     console.error('Failed to send contact email:', e);
-    sendJson(res, 502, { error: 'Could not send your message right now — please try again shortly.' });
+    // Provider's own explanation (e.g. "you can only send testing emails to
+    // your own address") — safe to show, and it's the difference between
+    // guessing and knowing why delivery failed.
+    let reason = '';
+    try { reason = JSON.parse(String(e.message).replace(/^Resend API \d+: /, '')).message || ''; } catch {}
+    sendJson(res, 502, {
+      error: 'Could not send your message right now — please try again shortly.',
+      reason: String(reason).slice(0, 300),
+    });
     return;
   }
   sendJson(res, 200, { ok: true });
