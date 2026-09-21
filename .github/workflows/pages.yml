@@ -34,7 +34,7 @@ jobs:
   deploy:
     environment:
       name: github-pages
-      url: ${{ steps.deploy-attempt-1.outputs.page_url || steps.deploy-attempt-2.outputs.page_url || steps.deploy-attempt-3.outputs.page_url }}
+      url: ${{ steps.finalize-deploy.outputs.page_url }}
     runs-on: ubuntu-latest
     needs: build
     steps:
@@ -52,4 +52,33 @@ jobs:
       - name: Deploy to GitHub Pages (attempt 3)
         if: steps.deploy-attempt-1.outcome == 'failure' && steps.deploy-attempt-2.outcome == 'failure'
         id: deploy-attempt-3
+        continue-on-error: true
         uses: actions/deploy-pages@v5
+
+      - name: Finalize deployment result
+        id: finalize-deploy
+        env:
+          ATTEMPT_1_OUTCOME: ${{ steps.deploy-attempt-1.outcome }}
+          ATTEMPT_1_URL: ${{ steps.deploy-attempt-1.outputs.page_url }}
+          ATTEMPT_2_OUTCOME: ${{ steps.deploy-attempt-2.outcome }}
+          ATTEMPT_2_URL: ${{ steps.deploy-attempt-2.outputs.page_url }}
+          ATTEMPT_3_OUTCOME: ${{ steps.deploy-attempt-3.outcome }}
+          ATTEMPT_3_URL: ${{ steps.deploy-attempt-3.outputs.page_url }}
+        run: |
+          if [ "$ATTEMPT_1_OUTCOME" = "success" ]; then
+            echo "page_url=$ATTEMPT_1_URL" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "$ATTEMPT_2_OUTCOME" = "success" ]; then
+            echo "page_url=$ATTEMPT_2_URL" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "$ATTEMPT_3_OUTCOME" = "success" ]; then
+            echo "page_url=$ATTEMPT_3_URL" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "All deployment attempts failed." >&2
+          exit 1
