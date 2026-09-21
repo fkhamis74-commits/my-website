@@ -26,6 +26,13 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
+// Last-resort safety net: a bug in one request handler should cost that one
+// request, not the whole site (async handlers are called without a catch, so
+// an unexpected throw there is an unhandled rejection, which by default
+// kills the process). Log it loudly and keep serving.
+process.on('uncaughtException', (err) => console.error('Uncaught exception:', err));
+process.on('unhandledRejection', (err) => console.error('Unhandled rejection:', err));
+
 const ROOT = __dirname;
 let DATA_DIR = process.env.DATA_DIR || ROOT;
 // Harmless when DATA_DIR already exists (the default ROOT case); makes sure
@@ -82,22 +89,45 @@ const MIME_TYPES = {
   '.txt': 'text/plain; charset=utf-8',
 };
 
-function serveStatic(req, res) {
-  let urlPath = decodeURIComponent(req.url.split('?')[0]);
-  if (urlPath === '/') urlPath = '/index.html';
+// decodeURIComponent throws on a malformed escape like "/%" — and an
+// exception thrown inside the request handler used to take the whole
+// process down. Any bad URL is just "not found".
+function safeDecodeUrlPath(url) {
+  try {
+    return decodeURIComponent(String(url || '').split('?')[0]);
+  } catch {
+    return null;
+  }
+}
 
-  // Resolve and guard against path traversal outside ROOT.
-  const filePath = path.normalize(path.join(ROOT, urlPath));
-  if (!filePath.startsWith(ROOT)) {
-    res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('403 Forbidden');
+// Only these files are ever served as static content. The site is one page
+// (index.html) whose images come from elsewhere, so there's nothing else
+// the browser needs from this folder — and the old "serve anything under
+// the project folder" behaviour exposed server.js, package.json, and (if
+// DATA_DIR ever fell back to the project folder) users.json and
+// sessions.json, i.e. every password hash and every login token.
+const PUBLIC_FILES = new Set(['/index.html', '/manifest.json']);
+
+function serveStatic(req, res) {
+  let urlPath = safeDecodeUrlPath(req.url);
+  if (urlPath === null) {
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('400 Bad Request');
     return;
   }
+  if (urlPath === '/') urlPath = '/index.html';
+
+  if (!PUBLIC_FILES.has(urlPath)) {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('404 Not Found');
+    return;
+  }
+  const filePath = path.join(ROOT, urlPath);
 
   fs.readFile(filePath, (err, data) => {
     if (err) {
       res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('404 Not Found: ' + urlPath);
+      res.end('404 Not Found');
       return;
     }
     const ext = path.extname(filePath).toLowerCase();
@@ -1515,7 +1545,12 @@ function applySecurityHeaders(res) {
 
 const server = http.createServer((req, res) => {
   applySecurityHeaders(res);
-  const urlPath = decodeURIComponent(req.url.split('?')[0]);
+  const urlPath = safeDecodeUrlPath(req.url);
+  if (urlPath === null) {
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('400 Bad Request');
+    return;
+  }
 
   // Browsers send an OPTIONS preflight before the real cross-origin
   // request (e.g. every POST/PATCH/DELETE call the native app makes).
