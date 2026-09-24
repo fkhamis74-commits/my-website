@@ -1162,6 +1162,72 @@ async function handleGetProducts(req, res) {
   sendJson(res, 200, loadProductsFromDisk());
 }
 
+// ---- AI moderation for new listings -----------------------------------------
+// A new listing starts "pending" either way — this only decides whether it
+// gets bumped straight to "approved" or left for a human in the admin queue.
+// Deliberately conservative: anything the model isn't confident about, or
+// any failure in this whole path (no API key, bad response, network error),
+// falls back to "review" rather than "approve". Getting a false "review" on
+// a fine listing just costs the admin one click later; a false "approve" on
+// a bad one is live on the site until someone notices.
+async function moderateProductListing(product) {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return { decision: 'review', reason: 'لم يتم إعداد المراجعة الذكية (لا يوجد مفتاح API).' };
+  }
+  let Anthropic;
+  try {
+    Anthropic = require('@anthropic-ai/sdk');
+  } catch (e) {
+    console.error('AI moderation: could not load @anthropic-ai/sdk:', e);
+    return { decision: 'review', reason: 'المراجعة الذكية غير متاحة حالياً.' };
+  }
+
+  const summary = {
+    name: product.name,
+    type: product.type,
+    price: product.price,
+    size: product.size,
+    condition: product.condition,
+    frameMaterial: product.frameMaterial,
+    notes: product.notes,
+    hasPhoto: !!product.image,
+  };
+
+  const prompt = `You are a moderation assistant for Pedalex, a classifieds marketplace for bikes and cycling gear in the UAE. A seller just submitted this new listing:
+
+${JSON.stringify(summary, null, 2)}
+
+Decide "approve" only if ALL of these hold:
+- It's clearly a real bike or cycling-related accessory (not an unrelated item, service, or spam).
+- It has a real name/title and a sane, non-zero price for that kind of item.
+- The notes/description contain no scam red flags: no request to pay or contact outside the platform via a suspicious link, no phone/email harvesting, no illegal or prohibited content, no hate speech.
+- Nothing about the listing looks incomplete, contradictory, or exploitative (e.g. price wildly mismatched to the described item).
+
+Otherwise decide "review" — and whenever you're genuinely unsure, choose "review" rather than guessing "approve".
+
+Respond with ONLY a JSON object, no other text: {"decision": "approve" | "review", "reason": "<one short sentence in Arabic explaining the decision, for the marketplace admin>"}`;
+
+  try {
+    const client = new Anthropic();
+    const res = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 200,
+      messages: [{ role: 'user', content: prompt }],
+    });
+    const text = (res.content || []).find((b) => b.type === 'text')?.text || '';
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) return { decision: 'review', reason: 'تعذّر فهم رد المراجعة الذكية.' };
+    const parsed = JSON.parse(match[0]);
+    if (parsed.decision !== 'approve' && parsed.decision !== 'review') {
+      return { decision: 'review', reason: 'رد المراجعة الذكية غير صالح.' };
+    }
+    return { decision: parsed.decision, reason: String(parsed.reason || '').slice(0, 300) };
+  } catch (e) {
+    console.error('AI listing moderation failed:', e);
+    return { decision: 'review', reason: 'حدث خطأ أثناء المراجعة الذكية.' };
+  }
+}
+
 async function handleCreateProduct(req, res) {
   const user = getAuthUser(req);
   if (!user) { sendUnauthorized(res); return; }
@@ -1185,6 +1251,16 @@ async function handleCreateProduct(req, res) {
     sellerId: user.id,
     status: 'pending',
   };
+
+  const moderation = await moderateProductListing(newProduct);
+  newProduct.aiDecision = moderation.decision;
+  newProduct.aiReason = moderation.reason;
+  if (moderation.decision === 'approve') {
+    newProduct.status = 'approved';
+  } else {
+    newProduct.adminNotes = moderation.reason;
+  }
+
   products.push(newProduct);
   saveProductsToDisk(products);
   sendJson(res, 201, newProduct);

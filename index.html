@@ -1412,8 +1412,32 @@
       color: var(--muted);
     }
 
+    /* Why the AI routed this one to manual review instead of auto-approving it */
+    .review-product-ai-note {
+      display: flex;
+      width: 100%;
+      box-sizing: border-box;
+      margin-top: 10px;
+      padding: 10px 14px;
+      background: rgba(155, 89, 182, 0.1);
+      border: 1px solid rgba(155, 89, 182, 0.3);
+      border-radius: var(--radius-md);
+      font-size: 0.82rem;
+      line-height: 1.5;
+      color: var(--text);
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .review-product-ai-note .icon { color: #9B59B6; margin-top: 2px; }
+
     .status-badge-sm {
       font-size: 0.7rem;
+    }
+    .status-ai-approved {
+      background: rgba(155, 89, 182, 0.12);
+      color: #9B59B6;
+      border: 1px solid rgba(155, 89, 182, 0.35);
+      margin-inline-start: 6px;
     }
 
     /* User Profile Page */
@@ -5181,6 +5205,8 @@
         // Admin
         adminTitle: 'لوحة الإدارة',
         pendingReviewTitle: '⏳ المنتجات بانتظار المراجعة',
+        aiReviewLabel: 'حوّلها الذكاء الاصطناعي للمراجعة',
+        aiApprovedTag: 'وافق عليها الذكاء الاصطناعي',
         pendingReviewDesc: 'راجع الصور والمواصفات والسعر قبل الموافقة على النشر.',
         usersManagement: 'إدارة المستخدمين',
         productsManagement: 'إدارة المنتجات',
@@ -5687,6 +5713,8 @@
         // Admin
         adminTitle: 'Admin Dashboard',
         pendingReviewTitle: '⏳ Products Pending Review',
+        aiReviewLabel: 'AI flagged for your review',
+        aiApprovedTag: 'AI-approved',
         pendingReviewDesc: 'Review photos, specs, and price before publishing the listing.',
         usersManagement: 'Manage Users',
         productsManagement: 'Manage Products',
@@ -8192,6 +8220,7 @@
                 ${icon('tag')} ${t('conditionBadgeLabel', 'Condition')}: ${escapeHtml(localizeCondition(p.condition))}
               </div>
               ${localizeProductText(p, 'notes', 'notesEn') ? `<div class="review-product-notes has-icon">${icon('file-text')}${escapeHtml(localizeProductText(p, 'notes', 'notesEn'))}</div>` : ''}
+              ${p.aiReason ? `<div class="review-product-ai-note has-icon">${icon('help-circle')}<span><strong>${t('aiReviewLabel', 'AI flagged for your review')}:</strong> ${escapeHtml(p.aiReason)}</span></div>` : ''}
               <div class="review-product-actions">
                 <button class="btn-approve has-icon" onclick="approveProduct(${p.id})">${icon('check-circle')}<span>${t('approvePublish', 'Approve & Publish')}</span></button>
                 <button class="btn-reject has-icon" onclick="openRejectModal(${p.id})">${icon('x-circle')}<span>${t('rejectWithNotes', 'Reject with Notes')}</span></button>
@@ -8220,7 +8249,7 @@
       // ---- All products table (approved + rejected) ----
       productsTable.innerHTML = products.filter(p => p.status !== 'pending').map(product => `
         <tr>
-          <td>${escapeHtml(localizeProductText(product, 'name', 'nameEn') || product.name)} <span class="status-badge status-badge-sm ${product.status === 'approved' ? 'status-approved' : 'status-rejected'}">${product.status === 'approved' ? icon('check-circle') + ' ' + t('publishedTag', 'Published') : icon('x-circle') + ' ' + t('rejectedTag', 'Rejected')}</span></td>
+          <td>${escapeHtml(localizeProductText(product, 'name', 'nameEn') || product.name)} <span class="status-badge status-badge-sm ${product.status === 'approved' ? 'status-approved' : 'status-rejected'}">${product.status === 'approved' ? icon('check-circle') + ' ' + t('publishedTag', 'Published') : icon('x-circle') + ' ' + t('rejectedTag', 'Rejected')}</span>${product.aiDecision === 'approve' && product.status === 'approved' ? `<span class="status-badge status-badge-sm status-ai-approved" title="${escapeHtml(product.aiReason || '')}">${icon('check-circle')} ${t('aiApprovedTag', 'AI-approved')}</span>` : ''}</td>
           <td>${escapeHtml(localizeSellerName(product))}</td>
           <td>${escapeHtml(product.price)}</td>
           <td><button class="delete-btn" onclick="deleteProduct(${product.id})">${t('deleteText', 'Delete')}</button></td>
