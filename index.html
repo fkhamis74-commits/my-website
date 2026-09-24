@@ -2227,8 +2227,13 @@
       display: none;
       position: absolute;
       top: calc(100% + 8px);
-      left: 0;
+      /* Anchor the trailing edge (right in English, left in Arabic) and
+         expand inward — anchoring a fixed physical side made the menu run
+         off the right edge of the screen in English/LTR, where the trigger
+         itself sits near that same edge. */
+      inset-inline-end: 0;
       min-width: 200px;
+      max-width: calc(100vw - 32px);
       background: var(--card);
       border-radius: 12px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.14);
