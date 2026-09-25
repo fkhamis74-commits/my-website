@@ -1439,6 +1439,14 @@
       border: 1px solid rgba(155, 89, 182, 0.35);
       margin-inline-start: 6px;
     }
+    .status-whatsapp-source {
+      background: rgba(37, 211, 102, 0.12);
+      color: #128C4A;
+      border: 1px solid rgba(37, 211, 102, 0.35);
+      margin-inline-start: 6px;
+    }
+    body.dark-mode .status-whatsapp-source { color: #25D366; }
+    .review-product-title + .status-whatsapp-source { margin-inline-start: 10px; }
 
     /* User Profile Page */
     .profile-header {
@@ -5207,6 +5215,7 @@
         pendingReviewTitle: '⏳ المنتجات بانتظار المراجعة',
         aiReviewLabel: 'حوّلها الذكاء الاصطناعي للمراجعة',
         aiApprovedTag: 'وافق عليها الذكاء الاصطناعي',
+        whatsappSourceTag: 'عبر واتساب',
         pendingReviewDesc: 'راجع الصور والمواصفات والسعر قبل الموافقة على النشر.',
         usersManagement: 'إدارة المستخدمين',
         productsManagement: 'إدارة المنتجات',
@@ -5715,6 +5724,7 @@
         pendingReviewTitle: '⏳ Products Pending Review',
         aiReviewLabel: 'AI flagged for your review',
         aiApprovedTag: 'AI-approved',
+        whatsappSourceTag: 'Via WhatsApp',
         pendingReviewDesc: 'Review photos, specs, and price before publishing the listing.',
         usersManagement: 'Manage Users',
         productsManagement: 'Manage Products',
@@ -8211,7 +8221,7 @@
               ? `<img src="${escapeHtml(p.image)}" alt="${escapeHtml(localizeProductText(p, 'name', 'nameEn') || p.name)}" />`
               : `<div class="no-img">${icon('bike','icon-placeholder')}</div>`}
             <div class="review-product-info">
-              <strong class="review-product-title">${escapeHtml(localizeProductText(p, 'name', 'nameEn') || p.name)}</strong>
+              <strong class="review-product-title">${escapeHtml(localizeProductText(p, 'name', 'nameEn') || p.name)}</strong>${p.source === 'whatsapp' ? `<span class="status-badge status-badge-sm status-whatsapp-source">${icon('message')} ${t('whatsappSourceTag', 'Via WhatsApp')}</span>` : ''}
               <div class="review-product-meta">
                 ${icon('user')} ${escapeHtml(localizeSellerName(p))} &nbsp;·&nbsp;
                 ${icon('package')} ${(p.type === 'bike' || ['road', 'mountain', 'hybrid', 'electric'].includes(p.type)) ? t('productTypeBike', 'Bicycle') : t('productTypeAccessory', 'Accessory')} &nbsp;·&nbsp;
@@ -8249,7 +8259,7 @@
       // ---- All products table (approved + rejected) ----
       productsTable.innerHTML = products.filter(p => p.status !== 'pending').map(product => `
         <tr>
-          <td>${escapeHtml(localizeProductText(product, 'name', 'nameEn') || product.name)} <span class="status-badge status-badge-sm ${product.status === 'approved' ? 'status-approved' : 'status-rejected'}">${product.status === 'approved' ? icon('check-circle') + ' ' + t('publishedTag', 'Published') : icon('x-circle') + ' ' + t('rejectedTag', 'Rejected')}</span>${product.aiDecision === 'approve' && product.status === 'approved' ? `<span class="status-badge status-badge-sm status-ai-approved" title="${escapeHtml(product.aiReason || '')}">${icon('check-circle')} ${t('aiApprovedTag', 'AI-approved')}</span>` : ''}</td>
+          <td>${escapeHtml(localizeProductText(product, 'name', 'nameEn') || product.name)} <span class="status-badge status-badge-sm ${product.status === 'approved' ? 'status-approved' : 'status-rejected'}">${product.status === 'approved' ? icon('check-circle') + ' ' + t('publishedTag', 'Published') : icon('x-circle') + ' ' + t('rejectedTag', 'Rejected')}</span>${product.aiDecision === 'approve' && product.status === 'approved' ? `<span class="status-badge status-badge-sm status-ai-approved" title="${escapeHtml(product.aiReason || '')}">${icon('check-circle')} ${t('aiApprovedTag', 'AI-approved')}</span>` : ''}${product.source === 'whatsapp' ? `<span class="status-badge status-badge-sm status-whatsapp-source">${icon('message')} ${t('whatsappSourceTag', 'Via WhatsApp')}</span>` : ''}</td>
           <td>${escapeHtml(localizeSellerName(product))}</td>
           <td>${escapeHtml(product.price)}</td>
           <td><button class="delete-btn" onclick="deleteProduct(${product.id})">${t('deleteText', 'Delete')}</button></td>

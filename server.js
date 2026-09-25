@@ -740,6 +740,267 @@ async function handleContact(req, res) {
   sendJson(res, 200, { ok: true });
 }
 
+// ---- WhatsApp Business Cloud API: listings sent in as a chat message --------
+// A seller messages the business WhatsApp number describing a bike (+ maybe
+// a photo); this turns that into a normal Pedalex listing — same AI
+// moderation as the website's own "sell your bike" form, same admin queue
+// when it isn't confidently clean. Needs three things set as real Render
+// environment variables once the Meta app exists: WHATSAPP_ACCESS_TOKEN,
+// WHATSAPP_PHONE_NUMBER_ID, and WHATSAPP_VERIFY_TOKEN (any string you pick —
+// it's just a shared secret Meta echoes back to prove the webhook config
+// request is really from you). Until those are set, the webhook endpoints
+// exist but quietly do nothing.
+const WHATSAPP_API_VERSION = 'v21.0';
+
+function whatsAppConfigured() {
+  return !!(process.env.WHATSAPP_ACCESS_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID);
+}
+
+function graphApiGetJson(url) {
+  return new Promise((resolve, reject) => {
+    https
+      .get(url, { headers: { Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}` } }, (res) => {
+        let data = '';
+        res.on('data', (c) => { data += c; });
+        res.on('end', () => {
+          try { resolve(JSON.parse(data)); } catch (e) { reject(e); }
+        });
+      })
+      .on('error', reject);
+  });
+}
+
+function graphApiGetBuffer(url) {
+  return new Promise((resolve, reject) => {
+    https
+      .get(url, { headers: { Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}` } }, (res) => {
+        const chunks = [];
+        res.on('data', (c) => chunks.push(c));
+        res.on('end', () => resolve(Buffer.concat(chunks)));
+      })
+      .on('error', reject);
+  });
+}
+
+// Downloads a photo the seller attached and returns it as a data: URI, the
+// same format the website's own upload form stores images in.
+async function fetchWhatsAppImage(mediaId) {
+  if (!mediaId) return null;
+  try {
+    const meta = await graphApiGetJson(`https://graph.facebook.com/${WHATSAPP_API_VERSION}/${mediaId}`);
+    if (!meta?.url) return null;
+    const buf = await graphApiGetBuffer(meta.url);
+    return `data:${meta.mime_type || 'image/jpeg'};base64,${buf.toString('base64')}`;
+  } catch (e) {
+    console.error('Failed to fetch WhatsApp media:', e);
+    return null;
+  }
+}
+
+function sendWhatsAppMessage(to, text) {
+  return new Promise((resolve, reject) => {
+    if (!whatsAppConfigured()) { resolve(); return; }
+    const payload = JSON.stringify({ messaging_product: 'whatsapp', to, type: 'text', text: { body: text } });
+    const req = https.request(
+      {
+        hostname: 'graph.facebook.com',
+        path: `/${WHATSAPP_API_VERSION}/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`,
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(payload),
+        },
+      },
+      (res) => {
+        let data = '';
+        res.on('data', (c) => { data += c; });
+        res.on('end', () => {
+          if (res.statusCode >= 200 && res.statusCode < 300) resolve();
+          else reject(new Error(`WhatsApp send ${res.statusCode}: ${data}`));
+        });
+      }
+    );
+    req.on('error', reject);
+    req.write(payload);
+    req.end();
+  });
+}
+
+// Reads a seller's free-text WhatsApp message and pulls out a listing —
+// or null if the message doesn't actually describe an item for sale (a
+// greeting, a question, "is this still available", etc.), so the caller
+// can ask for clarification instead of publishing nonsense.
+async function parseWhatsAppListing(text) {
+  if (!process.env.ANTHROPIC_API_KEY) return null;
+  let Anthropic;
+  try {
+    Anthropic = require('@anthropic-ai/sdk');
+  } catch {
+    return null;
+  }
+  const prompt = `A seller sent this WhatsApp message to list an item for sale on Pedalex, a bike/cycling-gear marketplace in the UAE:
+
+"""
+${text}
+"""
+
+If this message is NOT actually describing a specific item for sale (e.g. it's a greeting, a question, "is this available", unrelated chat), respond with exactly: {"notAListing": true}
+
+Otherwise extract the listing and respond with ONLY this JSON, no other text:
+{"name": "<short title>", "type": "road"|"mountain"|"hybrid"|"electric"|"accessory", "price": <number, AED — your best estimate if a currency/unit is implied, or 0 if truly not mentioned>, "size": "<size if mentioned, else empty string>", "condition": "<condition in Arabic if mentioned, else empty string>", "notes": "<any other details from the message, in the seller's own words>"}`;
+
+  try {
+    const client = new Anthropic();
+    const res = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 300,
+      messages: [{ role: 'user', content: prompt }],
+    });
+    const responseText = (res.content || []).find((b) => b.type === 'text')?.text || '';
+    const match = responseText.match(/\{[\s\S]*\}/);
+    if (!match) return null;
+    const parsed = JSON.parse(match[0]);
+    if (parsed.notAListing || !parsed.name) return null;
+    return parsed;
+  } catch (e) {
+    console.error('WhatsApp listing parse failed:', e);
+    return null;
+  }
+}
+
+// A single shared, unguessable-password account that owns every listing
+// submitted via WhatsApp — not something anyone signs in as, just a stable
+// sellerId so these listings behave like any other (owner-only edit/delete,
+// visible to the admin as a distinct source), while sellerName/sellerPhone
+// on the listing itself show the real sender for the "contact seller" button.
+function getOrCreateWhatsAppBotUser() {
+  const users = loadUsersFromDisk();
+  let bot = users.find((u) => u.email === 'whatsapp-bot@pedalex.internal');
+  if (bot) return bot;
+  bot = {
+    id: 999999999999,
+    name: 'WhatsApp',
+    email: 'whatsapp-bot@pedalex.internal',
+    phone: '',
+    passwordHash: hashPassword(crypto.randomBytes(24).toString('hex')),
+    rating: 5,
+    reviews: [],
+    isAdmin: false,
+    createdAt: new Date().toISOString(),
+  };
+  users.push(bot);
+  saveUsersToDisk(users);
+  return bot;
+}
+
+// Meta's one-time handshake when you save the webhook URL in the app
+// dashboard: echo back hub.challenge only if hub.verify_token matches what
+// you configured, proving the request really came from you setting it up.
+function handleWhatsAppVerify(req, res) {
+  const params = new URLSearchParams(req.url.split('?')[1] || '');
+  const token = process.env.WHATSAPP_VERIFY_TOKEN;
+  if (token && params.get('hub.mode') === 'subscribe' && params.get('hub.verify_token') === token) {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end(params.get('hub.challenge') || '');
+  } else {
+    res.writeHead(403, { 'Content-Type': 'text/plain' });
+    res.end('Forbidden');
+  }
+}
+
+// Every inbound message (and every delivery-status update, which this
+// ignores) arrives here. Meta expects a fast 200 regardless of outcome —
+// it retries on anything else — so this acknowledges immediately and keeps
+// working in the background rather than making Meta wait on the AI calls.
+async function handleWhatsAppMessage(req, res) {
+  let body;
+  try {
+    body = await readJsonBody(req, 5_000_000);
+  } catch {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end('{}');
+    return;
+  }
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end('{}');
+
+  if (!whatsAppConfigured()) return;
+
+  try {
+    const value = body?.entry?.[0]?.changes?.[0]?.value;
+    const message = value?.messages?.[0];
+    if (!message) return; // a status update (delivered/read), not a new message
+    const from = message.from;
+    const senderName = value?.contacts?.[0]?.profile?.name || '';
+
+    let text = '';
+    let imageMediaId = null;
+    if (message.type === 'text') {
+      text = message.text?.body || '';
+    } else if (message.type === 'image') {
+      text = message.image?.caption || '';
+      imageMediaId = message.image?.id || null;
+    } else {
+      await sendWhatsAppMessage(from, 'مرحباً 👋 أرسل لي وصف الدراجة (النوع، الحالة، السعر) — ويفضّل مع صورة — وبنشرها لك على Pedalex.');
+      return;
+    }
+
+    if (!text.trim()) {
+      await sendWhatsAppMessage(from, 'أرسل وصف مختصر للدراجة (النوع، الحالة، السعر) مع الصورة.');
+      return;
+    }
+
+    const parsed = await parseWhatsAppListing(text);
+    if (!parsed) {
+      await sendWhatsAppMessage(from, 'ما قدرت أفهم تفاصيل الإعلان 🙏 جرّب تكتب: نوع الدراجة، الحالة، السعر، والمقاس إن وجد.');
+      return;
+    }
+
+    const image = imageMediaId ? await fetchWhatsAppImage(imageMediaId) : null;
+    const bot = getOrCreateWhatsAppBotUser();
+    const products = loadProductsFromDisk();
+    const newProduct = {
+      name: parsed.name,
+      type: parsed.type || 'accessory',
+      price: parsed.price || 0,
+      size: parsed.size || '',
+      condition: parsed.condition || '',
+      notes: parsed.notes || '',
+      image: image || '',
+      sellerName: senderName || 'بائع واتساب',
+      sellerPhone: `+${from}`,
+      id: Date.now(),
+      createdAt: new Date().toISOString(),
+      sellerId: bot.id,
+      status: 'pending',
+      source: 'whatsapp',
+    };
+
+    const moderation = await moderateProductListing(newProduct);
+    newProduct.aiDecision = moderation.decision;
+    newProduct.aiReason = moderation.reason;
+    if (moderation.decision === 'approve') {
+      newProduct.status = 'approved';
+    } else {
+      newProduct.adminNotes = moderation.reason;
+    }
+
+    products.push(newProduct);
+    saveProductsToDisk(products);
+
+    const appUrl = process.env.APP_PUBLIC_URL || 'https://pedalexbikes.com';
+    await sendWhatsAppMessage(
+      from,
+      newProduct.status === 'approved'
+        ? `تم نشر إعلانك على Pedalex ✅\n${appUrl}`
+        : 'استلمنا إعلانك وبنراجعه بسرعة قبل النشر، بنعلمك أول ما يتم قبوله ✅'
+    );
+  } catch (e) {
+    console.error('WhatsApp webhook processing failed:', e);
+  }
+}
+
 // Resolves the "Authorization: Bearer <token>" header to the real,
 // server-known user (re-read from disk so a just-revoked admin flag is
 // always current) or the guest identity — or null if missing/invalid/expired.
@@ -1651,6 +1912,9 @@ const server = http.createServer((req, res) => {
   }
 
   if (req.method === 'POST' && urlPath === '/api/contact') { handleContact(req, res); return; }
+
+  if (req.method === 'GET' && urlPath === '/webhook/whatsapp') { handleWhatsAppVerify(req, res); return; }
+  if (req.method === 'POST' && urlPath === '/webhook/whatsapp') { handleWhatsAppMessage(req, res); return; }
 
   if (req.method === 'POST' && urlPath === '/api/auth/register') { handleRegister(req, res); return; }
   if (req.method === 'POST' && urlPath === '/api/auth/login') { handleLogin(req, res); return; }
